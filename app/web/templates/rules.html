@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="grid two">
+    <article class="card">
+        <h2>Onboarding</h2>
+        <p class="muted">Fuente: {{ onboarding.resolved_path }}</p>
+        <pre>{{ onboarding.content }}</pre>
+
+        <h3>Onboarding breve</h3>
+        <p class="muted">Fuente: {{ onboarding_brief.resolved_path }}</p>
+        <pre>{{ onboarding_brief.content }}</pre>
+    </article>
+
+    <article class="card">
+        <h2>Rules efectivas</h2>
+        <p class="muted">Sources: {{ rules.source_paths | join(', ') }}</p>
+        <pre>{{ rules.content }}</pre>
+    </article>
+</section>
+{% endblock %}

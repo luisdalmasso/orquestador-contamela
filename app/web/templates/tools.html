@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="grid two">
+    <article class="card">
+        <h2>Catálogo MCP</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>Categoría</th>
+                    <th>Tags</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool in tools %}
+                <tr>
+                    <td><strong>{{ tool.name }}</strong><br><span class="muted">{{ tool.description }}</span></td>
+                    <td>{{ tool.category }}</td>
+                    <td>{{ ", ".join(tool.tags) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article class="card">
+        <h2>Tool runner</h2>
+        <form id="tool-runner-form" class="stack">
+            <label for="tool-name">Tool</label>
+            <select id="tool-name" name="tool">
+                {% for tool in tools %}
+                <option value="{{ tool.name }}">{{ tool.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="tool-arguments">Arguments JSON</label>
+            <textarea id="tool-arguments" rows="14">{
+  "repo_path": "/desarrollo",
+  "confirm": false,
+  "summary": "preview desde UI"
+}</textarea>
+
+            <button type="submit">Ejecutar tool</button>
+        </form>
+        <h3>Resultado</h3>
+        <pre id="tool-runner-output">Esperando ejecución…</pre>
+    </article>
+</section>
+{% endblock %}

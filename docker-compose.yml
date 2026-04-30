@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  clawteam:
+    build: .
+    container_name: clawteam-backend
+    privileged: true
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Telegram
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - CLAWTEAM_DATA_DIR=/home/nanobot/.clawteam
+      - CLAWTEAM_TRANSPORT=file
+      - CLAWTEAM_DEFAULT_BACKEND=tmux
+      - GATEWAY_PORT=18790
+
+    ports:
+      - "8080:8080"      # Web UI de ClawTeam
+      - "18790:18790"    # Gateway de nanobot
+    volumes:
+      - /contenedores/conti_home:/home/nanobot/
+      # Google Workspace (credentials + token)
+      - ./google-workspace:/code/google-workspace
+      # Voice
+      - ./voice:/code/voice
+      - /desarrollo:/desarrollo
+      - /compose:/compose:ro
+      - ./claw_data:/app/data
+    # Configuración de los agentes (Arquitecto, DevOps, Developer)
+      - /desarrollo/config/team.toml:/app/config/team.toml:ro
+      - /desarrollo/shared_skills:/app/skills:ro # Tus scripts de python con skills
+    restart: unless-stopped

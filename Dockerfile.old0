@@ -1,0 +1,63 @@
+FROM python:3.12-slim
+
+# Meta
+LABEL maintainer="Luis Dalmasso"
+LABEL description="Conti - Asistente IA para Contamela"
+
+# Variables de entorno
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar sistema
+RUN apt-get update && apt-get install -y \\n    postgresql-client \\n    postgresql-client \
+    git \
+    ffmpeg \
+    curl \
+    wget \
+    && curl -fsSL https://tailscale.com/install.sh | sh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear usuario no root
+RUN useradd -m -s /bin/bash conti
+
+# Directorios de trabajo
+RUN mkdir -p /code/google-workspace \
+             /code/voice/input \
+             /code/voice/output \
+             /code/nanobot/workspace \
+             /code/nanobot/skills
+
+WORKDIR /code
+
+# Copiar archivos de requirements
+COPY requirements.txt /code/
+COPY config.json  /code/nanobot
+COPY config.json  /code/.nanobot/config.json 
+
+# Instalar dependencias Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar estructura
+COPY google-workspace/ /code/google-workspace/
+COPY voice/ /code/voice/
+COPY nanobot/ /code/nanobot/
+
+# Copiar el script de inicio y darle permisos de ejecución
+COPY entrypoint.sh /code/
+RUN chmod +x /code/entrypoint.sh
+
+# Permisos
+RUN chown -R conti:conti /code
+
+# IMPORTANTE: No usamos "USER conti" aquí porque tailscaled necesita arrancar como root.
+# El cambio de usuario se hace de forma segura dentro del entrypoint.sh
+
+USER conti
+
+# Puerto
+EXPOSE 18790
+
+# Inicio
+CMD ["nanobot", "gateway"]
+#CMD ["/code/entrypoint.sh"]
+

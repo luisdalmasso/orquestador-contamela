@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="grid two">
+    <article class="card">
+        <h2>Config redactada</h2>
+        <pre>{{ config_json }}</pre>
+    </article>
+
+    <article class="card">
+        <h2>Paths resueltos</h2>
+        <pre>{{ paths_json }}</pre>
+    </article>
+</section>
+{% endblock %}

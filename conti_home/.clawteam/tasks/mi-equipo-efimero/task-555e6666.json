@@ -1,0 +1,16 @@
+{
+  "id": "555e6666",
+  "subject": "Design and implement backend API endpoints",
+  "description": "",
+  "status": "pending",
+  "priority": "medium",
+  "owner": "backend-dev",
+  "lockedBy": "",
+  "lockedAt": "",
+  "blocks": [],
+  "blockedBy": [],
+  "startedAt": "",
+  "createdAt": "2026-04-29T20:18:06.251540+00:00",
+  "updatedAt": "2026-04-29T20:18:06.251586+00:00",
+  "metadata": {}
+}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="grid two">
+    <article class="card">
+        <h2>Estado general</h2>
+        <dl class="stats">
+            <div><dt>Backend</dt><dd>{{ health.status }}</dd></div>
+            <div><dt>Servicio</dt><dd>{{ health.service }}</dd></div>
+            <div><dt>Modo LLM</dt><dd>{{ health.llm_backend.mode }}</dd></div>
+            <div><dt>Modelo `serve`</dt><dd>{{ backend_status.models[0].id if backend_status.models else "n/d" }}</dd></div>
+            <div><dt>`serve` reachable</dt><dd>{{ "sí" if backend_status.reachable else "no" }}</dd></div>
+            <div><dt>Tools MCP</dt><dd>{{ tools_count }}</dd></div>
+        </dl>
+    </article>
+
+    <article class="card">
+        <h2>Repos</h2>
+        <dl class="stats compact">
+            <div><dt>HOME</dt><dd>{{ health.workspace.home_root }}</dd></div>
+            <div><dt>`/desarrollo`</dt><dd>{{ health.workspace.development_repo }}</dd></div>
+            <div><dt>`/compose`</dt><dd>{{ health.workspace.production_repo }}</dd></div>
+            <div><dt>Rama actual</dt><dd>{{ git_summary.branch or "n/d" }}</dd></div>
+            <div><dt>Working tree limpio</dt><dd>{{ "sí" if git_summary.is_clean else "no" }}</dd></div>
+            <div><dt>Cambios detectados</dt><dd>{{ git_summary.modified_count or 0 }}</dd></div>
+        </dl>
+    </article>
+</section>
+
+<section class="grid two">
+    <article class="card">
+        <h2>Estado Git básico</h2>
+        {% if git_summary.available %}
+        <pre>{{ git_summary | tojson(indent=2) }}</pre>
+        {% else %}
+        <p class="muted">No se pudo leer el estado Git: {{ git_summary.error }}</p>
+        {% endif %}
+    </article>
+
+    <article class="card">
+        <h2>Backend `nanobot serve`</h2>
+        <pre>{{ backend_status | tojson(indent=2) }}</pre>
+    </article>
+</section>
+{% endblock %}

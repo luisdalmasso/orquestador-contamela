@@ -1,0 +1,35 @@
+name = "Equipo Personalizado"
+description = "Arquitecto + Developer + DevOps con nanobot"
+
+[leader]
+name = "lider"
+role = "Tech Lead"
+engine = "custom"
+model = "claude-sonnet-4.5"
+executable = "nanobot"
+
+[[agents]]
+name = "architect"
+role = "Solution Architect"
+engine = "custom"
+model = "claude-sonnet-4.5"
+executable = "nanobot"
+
+[[agents]]
+name = "developer"
+role = "Senior Python Developer"
+engine = "custom"
+model = "gpt-5.2-codex"
+executable = "nanobot"
+
+[[agents]]
+name = "devops"
+role = "DevOps Specialist"
+engine = "custom"
+model = "claude-haiku-4.5"
+executable = "nanobot"
+
+[tasks.dependencies]
+architect = []
+developer = ["architect"]
+devops = ["developer"]

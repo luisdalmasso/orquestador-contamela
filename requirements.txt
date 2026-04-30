@@ -1,0 +1,36 @@
+# Core
+nanobot-ai
+fastapi
+uvicorn[standard]
+pydantic-settings
+orjson
+sse-starlette
+python-multipart
+jinja2
+httpx
+pytest
+
+# Google Workspace
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+
+# Voice - Transcripción
+faster-whisper
+
+# Voice - Síntesis
+gTTS
+
+# Email
+imap-tools
+
+# Otros
+requests
+beautifulsoup4
+deep-translator
+tiktoken
+docker
+
+# Telegram
+python-telegram-bot

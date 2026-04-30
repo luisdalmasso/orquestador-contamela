@@ -1,0 +1,54 @@
+{
+  "data_dir": "",
+  "user": "",
+  "default_team": "",
+  "default_profile": "",
+  "transport": "",
+  "task_store": "",
+  "workspace": "auto",
+  "default_backend": "tmux",
+  "skip_permissions": true,
+  "timezone": "UTC",
+  "gource_path": "",
+  "gource_resolution": "1280x720",
+  "gource_seconds_per_day": 0.5,
+  "profiles": {
+    "nanobot-cli": {
+      "description": "Perfil para ejecutar nanobot como worker",
+      "agent": "nanobot",
+      "command": [
+        "nanobot",
+        "agent"
+      ],
+      "model": "",
+      "base_url": "",
+      "base_url_env": "",
+      "api_key_env": "",
+      "api_key_target_env": "",
+      "env": {},
+      "env_map": {},
+      "args": []
+    },
+    "nanobot-copilot": {
+      "description": "Perfil para lanzar nanobots con túnel Copilot",
+      "agent": "nanobot",
+      "command": [],
+      "model": "",
+      "base_url": "",
+      "base_url_env": "",
+      "api_key_env": "",
+      "api_key_target_env": "",
+      "env": {
+        "OPENAI_BASE_URL": "https://1dc8-2803-9800-984a-8595-58c1-a942-bb68-8960.ngrok-free.app/v1",
+        "NANOBOT_DEFAULT_MODEL": "gpt-5.2-codex"
+      },
+      "env_map": {},
+      "args": []
+    }
+  },
+  "presets": {},
+  "spawn_prompt_delay": 2.0,
+  "spawn_ready_timeout": 30.0,
+  "hooks": [],
+  "plugins": []
+}

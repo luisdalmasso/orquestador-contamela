@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Datos voluminosos / runtime
+claw_data/
+conti_home/workspace/
+conti_home/hf_cache/
+conti_home/.nanobot/cache/
+nanobot/workspace/
+
+# Repos embebidos (se manejan por separado)
+conti_home/.nanobot/workspace/
+conti_home/api-workspace/
+nanobot/
+
+# Credenciales OAuth y secrets
+google-workspace/token.json
+conti_home/google-workspace/token.json
+conti_home/google-workspace/credentials.json
+
+# SSH keys - NUNCA versionar
+conti_home/.ssh/id_rsa
+conti_home/.ssh/id_rsa2.ppk
+conti_home/.ssh/known_hosts
+conti_home/.ssh/known_hosts.old
+
+# Cache npm
+conti_home/.npm/
+
+# Cache HuggingFace / modelos grandes
+conti_home/.cache/
+conti_home/.local/
+conti_home/.config/
+conti_home/.nanobot/
+
+# Modelos / cache HuggingFace
+*.bin
+*.safetensors
+*.gguf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Docker build cache
+.dockerignore_cache

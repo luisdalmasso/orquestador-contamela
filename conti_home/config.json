@@ -1,0 +1,74 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "~/.nanobot/workspace",
+      "model": "gpt-4",
+      "provider": "copilot-local",
+      "temperature": 0.2,
+      "maxToolIterations": 10,
+      "maxTokens": 8192,
+      "contextWindowTokens": 65536
+    },
+    "basico": {
+      "model": "kilo-auto/free",
+      "provider": "openai",
+      "temperature": 0.1,
+      "maxToolIterations": 3
+    },
+    "developer": {
+      "model": "kilo-auto/free",
+      "provider": "openai",
+      "temperature": 0.1,
+      "maxToolIterations": 5
+    },
+    "arquitecto": {
+      "model": "kilo-auto/free",
+      "provider": "openai",
+      "temperature": 0.2,
+      "maxToolIterations": 5
+    }
+  },
+  "channels": {
+    "sendProgress": true,
+    "sendToolHints": false,
+    "telegram": {
+      "enabled": true,
+      "token": "8217561599:AAHL_ZEYvgjo8b88jk_cFz_BuMRh15ooVB4",
+      "allowFrom": ["luisdalmasso"],
+      "proxy": null,
+      "replyToMessage": false,
+      "groupPolicy": "mention"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "apiBase": "http://localhost:11434"
+    },
+    "openai": {
+      "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6Im9hdXRoL2dvb2dsZToxMDg3NDY4Njc5OTUwMjQ3ODY5MzAiLCJhcGlUb2tlblBlcHBlciI6bnVsbCwidmVyc2lvbiI6MywiaWF0IjoxNzczODQxNTU3LCJleHAiOjE5MzE1MjE1NTd9.Y4JwaJ7Jl-slgeIfCzPuPgv-BaHyvuNTHj25ojqp0IE",
+      "apiBase": "https://api.kilo.ai/api/gateway"
+    },
+    "gemini": {
+      "apiKey": "AIzaSyDGzqjiDqrCVF8BMXLvPtZa9lDwuRMbwq4"
+    },
+    "copilot-local": {
+      "apiKey": "dummy",
+      "apiBase": "http://host.docker.internal:3030/v1"
+    }
+  },
+  "gateway": {
+    "host": "0.0.0.0",
+    "port": 18790,
+    "heartbeat": {
+      "enabled": true,
+      "intervalS": 1800
+    }
+  },
+  "tools": {
+    "exec": {
+      "timeout": 60,
+      "pathAppend": ""
+    },
+    "restrictToWorkspace": false
+  }
+}

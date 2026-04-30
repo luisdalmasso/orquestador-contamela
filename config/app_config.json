@@ -1,0 +1,34 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 9001,
+    "reload": false
+  },
+  "llm_emulation": {
+    "enabled": true,
+    "default_model": "conti-default",
+    "streaming_enabled": true,
+    "mode": "nanobot_serve",
+    "serve_profile": "conti-llm-serve",
+    "serve_base_url": "http://127.0.0.1:8765"
+  },
+  "providers": {
+    "active": "openai_compatible",
+    "openai_compatible": {
+      "api_base": "${OPENAI_BASE_URL}",
+      "api_key_env": "OPENAI_API_KEY"
+    }
+  },
+  "paths": {
+    "home_root": "/home/nanobot",
+    "development_repo": "/desarrollo",
+    "production_repo": "/compose",
+    "onboarding_file": "/app/docs/onboarding.md",
+    "onboarding_brief_file": "/app/docs/onboarding_brief.md",
+    "rules_file": "/app/docs/rules.md"
+  },
+  "ui": {
+    "enabled": true,
+    "title": "Conti MCP Console"
+  }
+}

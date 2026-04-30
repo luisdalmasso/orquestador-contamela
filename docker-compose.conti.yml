@@ -1,0 +1,65 @@
+services:
+  conti-backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: conti-backend
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONTI_BACKEND_CONFIG=/app/config/app_config.json
+      # Telegram
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    volumes:
+      # Nanobot workspace
+      #- ./nanobot/workspace:/code/nanobot/workspace
+      # Nanobot skills
+      #- ./nanobot/skills:/code/nanobot/skills
+      #- ./nanobot:/home/conti/.nanobot
+      # Google Workspace (credentials + token)
+      - ./google-workspace:/code/google-workspace
+      # Voice
+      - ./voice:/code/voice
+      - ./conti_home:/home/nanobot/
+      - /desarrollo:/desarrollo
+      - /compose:/compose:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./claw_data:/app/data
+      # Configuración de los agentes (Arquitecto, DevOps, Developer)
+      - /desarrollo/config/team.toml:/app/config/team.toml:ro
+      - /desarrollo/shared_skills:/app/skills:ro # Tus scripts de python con skills
+    ports:
+      - "18790:18790"
+      - "8080:8080"
+      - "9007:9001"
+      - "9001:9001"
+      - "8765:8765"
+    mem_limit: 24g
+    cpus: 4
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    group_add:
+      - "988"
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    # entrypoint: ["tail", "-f", "/dev/null"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:9001/health >/dev/null && wget -qO- http://127.0.0.1:8765/health >/dev/null",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - desarrollo_odoo-network-dev
+
+networks:
+  desarrollo_odoo-network-dev: 
+    external: true
+

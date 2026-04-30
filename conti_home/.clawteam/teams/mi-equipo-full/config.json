@@ -1,0 +1,44 @@
+{
+  "name": "mi-equipo-full",
+  "description": "Software Development Team - multi-agent full-stack development with parallel workstreams",
+  "leadAgentId": "a8e3ac66cd07",
+  "createdAt": "2026-04-29T20:03:58.392739+00:00",
+  "members": [
+    {
+      "name": "tech-lead",
+      "user": "",
+      "agentId": "a8e3ac66cd07",
+      "agentType": "leader",
+      "joinedAt": "2026-04-29T20:03:58.392647+00:00"
+    },
+    {
+      "name": "backend-dev",
+      "user": "",
+      "agentId": "5688ab4d8615",
+      "agentType": "backend-developer",
+      "joinedAt": "2026-04-29T20:03:58.399034+00:00"
+    },
+    {
+      "name": "frontend-dev",
+      "user": "",
+      "agentId": "83e1975b8714",
+      "agentType": "frontend-developer",
+      "joinedAt": "2026-04-29T20:03:58.400907+00:00"
+    },
+    {
+      "name": "qa-engineer",
+      "user": "",
+      "agentId": "ff0213bf0c1b",
+      "agentType": "qa-engineer",
+      "joinedAt": "2026-04-29T20:03:58.404873+00:00"
+    },
+    {
+      "name": "devops",
+      "user": "",
+      "agentId": "a309bf88be8f",
+      "agentType": "devops-engineer",
+      "joinedAt": "2026-04-29T20:03:58.406839+00:00"
+    }
+  ],
+  "budgetCents": 0.0
+}

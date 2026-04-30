@@ -1,0 +1,16 @@
+{
+  "id": "05af60a0",
+  "subject": "Implement frontend UI components",
+  "description": "",
+  "status": "pending",
+  "priority": "medium",
+  "owner": "frontend-dev",
+  "lockedBy": "",
+  "lockedAt": "",
+  "blocks": [],
+  "blockedBy": [],
+  "startedAt": "",
+  "createdAt": "2026-04-29T20:18:06.255124+00:00",
+  "updatedAt": "2026-04-29T20:18:06.255136+00:00",
+  "metadata": {}
+}

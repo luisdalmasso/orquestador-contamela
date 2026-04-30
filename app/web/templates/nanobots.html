@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Nanobots</h2>
+    <p class="muted">Edición operativa de la config del `gateway` y de la config dedicada de `nanobot serve`.</p>
+    {% if save_result %}
+    <div class="notice success">{{ save_result }}</div>
+    {% endif %}
+</section>
+
+<section class="grid two">
+    <article class="card">
+        <h2>Gateway</h2>
+        <p class="muted">Archivo: {{ gateway_config.path }}</p>
+        <form method="post" action="/ui/nanobots/gateway" class="stack">
+            <label>Model <input type="text" name="model" value="{{ gateway_config.editable.model }}"></label>
+            <label>Provider <input type="text" name="provider" value="{{ gateway_config.editable.provider }}" list="gateway-providers"></label>
+            <datalist id="gateway-providers">{% for provider in gateway_config.provider_options %}<option value="{{ provider }}">{% endfor %}</datalist>
+            <label>Temperature <input type="number" step="0.01" name="temperature" value="{{ gateway_config.editable.temperature }}"></label>
+            <label>Max Tool Iterations <input type="number" name="maxToolIterations" value="{{ gateway_config.editable.maxToolIterations }}"></label>
+            <label>Max Tokens <input type="number" name="maxTokens" value="{{ gateway_config.editable.maxTokens }}"></label>
+            <label>Context Window Tokens <input type="number" name="contextWindowTokens" value="{{ gateway_config.editable.contextWindowTokens }}"></label>
+            <label>API Base <input type="text" name="api_base" value="{{ gateway_config.editable.api_base }}"></label>
+            <label>API Key <input type="text" name="api_key" value="{{ gateway_config.editable.api_key }}"></label>
+            <label>Telegram Token <input type="text" name="telegram_token" value="{{ gateway_config.editable.telegram_token }}"></label>
+            <label>Allow From <textarea name="allowFrom" rows="3">{{ gateway_config.editable.allowFromText }}</textarea></label>
+            <button type="submit">Guardar Gateway</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <h2>LLM</h2>
+        <p class="muted">Archivo: {{ llm_config.path }}</p>
+        <form method="post" action="/ui/nanobots/llm" class="stack">
+            <label>Model <input type="text" name="model" value="{{ llm_config.editable.model }}"></label>
+            <label>Provider <input type="text" name="provider" value="{{ llm_config.editable.provider }}" list="llm-providers"></label>
+            <datalist id="llm-providers">{% for provider in llm_config.provider_options %}<option value="{{ provider }}">{% endfor %}</datalist>
+            <label>Temperature <input type="number" step="0.01" name="temperature" value="{{ llm_config.editable.temperature }}"></label>
+            <label>Max Tool Iterations <input type="number" name="maxToolIterations" value="{{ llm_config.editable.maxToolIterations }}"></label>
+            <label>Max Tokens <input type="number" name="maxTokens" value="{{ llm_config.editable.maxTokens }}"></label>
+            <label>Context Window Tokens <input type="number" name="contextWindowTokens" value="{{ llm_config.editable.contextWindowTokens }}"></label>
+            <label>API Base <input type="text" name="api_base" value="{{ llm_config.editable.api_base }}"></label>
+            <label>API Key <input type="text" name="api_key" value="{{ llm_config.editable.api_key }}"></label>
+            <button type="submit">Guardar LLM Serve</button>
+        </form>
+    </article>
+</section>
+{% endblock %}

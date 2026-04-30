@@ -1,0 +1,16 @@
+{
+  "id": "3a77a076",
+  "subject": "Set up CI/CD pipeline",
+  "description": "",
+  "status": "pending",
+  "priority": "medium",
+  "owner": "devops",
+  "lockedBy": "",
+  "lockedAt": "",
+  "blocks": [],
+  "blockedBy": [],
+  "startedAt": "",
+  "createdAt": "2026-04-29T20:18:06.269111+00:00",
+  "updatedAt": "2026-04-29T20:18:06.269156+00:00",
+  "metadata": {}
+}

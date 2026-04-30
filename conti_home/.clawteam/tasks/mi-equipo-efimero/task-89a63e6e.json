@@ -1,0 +1,16 @@
+{
+  "id": "89a63e6e",
+  "subject": "Write unit and integration tests",
+  "description": "",
+  "status": "pending",
+  "priority": "medium",
+  "owner": "qa-engineer",
+  "lockedBy": "",
+  "lockedAt": "",
+  "blocks": [],
+  "blockedBy": [],
+  "startedAt": "",
+  "createdAt": "2026-04-29T20:18:06.264561+00:00",
+  "updatedAt": "2026-04-29T20:18:06.264572+00:00",
+  "metadata": {}
+}

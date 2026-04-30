@@ -1,0 +1,23 @@
+{
+  "name": "equipo-activo1",
+  "description": "Mi primer equipo",
+  "leadAgentId": "9d4669b069d0",
+  "createdAt": "2026-04-29T19:13:02.957176+00:00",
+  "members": [
+    {
+      "name": "lider",
+      "user": "",
+      "agentId": "9d4669b069d0",
+      "agentType": "leader",
+      "joinedAt": "2026-04-29T19:13:02.957052+00:00"
+    },
+    {
+      "name": "worker1",
+      "user": "",
+      "agentId": "69c8eb8c3064",
+      "agentType": "general-purpose",
+      "joinedAt": "2026-04-29T19:16:26.184656+00:00"
+    }
+  ],
+  "budgetCents": 0.0
+}
