@@ -25,6 +25,8 @@ services:
       - /compose:/compose:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - ./claw_data:/app/data
+      # Hot-reload: app bindeada para desarrollo sin rebuild
+      - ./app:/app/app
       # Configuración de los agentes (Arquitecto, DevOps, Developer)
       - /desarrollo/config/team.toml:/app/config/team.toml:ro
       - /desarrollo/shared_skills:/app/skills:ro # Tus scripts de python con skills

@@ -36,7 +36,7 @@ nanobot serve --host "${SERVE_HOST}" --port "${SERVE_PORT}" --config "${NANOBOT_
 
 # Iniciar backend FastAPI propio
 echo "🧠 Conti Backend en http://${BACKEND_HOST}:${BACKEND_PORT}"
-CONTI_BACKEND_CONFIG="${CONTI_BACKEND_CONFIG}" python3 -m uvicorn app.main:app --host "${BACKEND_HOST}" --port "${BACKEND_PORT}" &
+CONTI_BACKEND_CONFIG="${CONTI_BACKEND_CONFIG}" python3 -m uvicorn app.main:app --host "${BACKEND_HOST}" --port "${BACKEND_PORT}" --reload --reload-dir /app/app &
 
 # Iniciar Web UI de ClawTeam
 echo "🖥️ Web UI ClawTeam en http://localhost:8080"
