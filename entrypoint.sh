@@ -36,13 +36,36 @@ nanobot serve --host "${SERVE_HOST}" --port "${SERVE_PORT}" --config "${NANOBOT_
 
 # Iniciar backend FastAPI propio
 echo "🧠 Conti Backend en http://${BACKEND_HOST}:${BACKEND_PORT}"
-CONTI_BACKEND_CONFIG="${CONTI_BACKEND_CONFIG}" python3 -m uvicorn app.main:app --host "${BACKEND_HOST}" --port "${BACKEND_PORT}" --reload --reload-dir /app/app &
+CONTI_BACKEND_CONFIG="${CONTI_BACKEND_CONFIG}" python3 -m uvicorn app.main:app \
+  --host "${BACKEND_HOST}" --port "${BACKEND_PORT}" &
 
 # Iniciar Web UI de ClawTeam
 echo "🖥️ Web UI ClawTeam en http://localhost:8080"
 clawteam board serve --port 8080 --host 0.0.0.0 &
 
-echo "✅ Listo. Gateway:${GATEWAY_PORT:-18790} | Serve:${SERVE_PORT} | Backend:${BACKEND_PORT} | WebUI:8080"
+# ── Tenant nanobot serve instances ──────────────────────────────────
+# Each tenant in /tenants/<id>/ gets its own nanobot serve
+TENANT_PORTS="catolico:8766"  # Add more: "odoo_repuestos:8767 resto_mendoza:8768"
+
+for entry in $TENANT_PORTS; do
+    tenant_name="${entry%%:*}"
+    tenant_port="${entry##*:}"
+    tenant_dir="/tenants/${tenant_name}"
+    tenant_config="${tenant_dir}/.nanobot/config.json"
+
+    if [ -f "$tenant_config" ]; then
+        echo "🤖 nanobot serve [${tenant_name}] en http://0.0.0.0:${tenant_port}"
+        env HOME="$tenant_dir" nanobot serve \
+            --host 0.0.0.0 \
+            --port "$tenant_port" \
+            --config "$tenant_config" &
+        sleep 2
+    else
+        echo "⚠️  Tenant ${tenant_name}: config no encontrada en ${tenant_config}"
+    fi
+done
+
+echo "✅ Listo. Gateway:${GATEWAY_PORT:-18790} | Serve:${SERVE_PORT} | Backend:${BACKEND_PORT} | WebUI:8080 | Tenants: ${TENANT_PORTS}"
 
 # Mantener vivo
 wait

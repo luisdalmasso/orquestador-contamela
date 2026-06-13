@@ -58,6 +58,7 @@ def ui_nanobots(request: Request, saved: str | None = None):
     context = _build_base_context(request)
     context["gateway_config"] = nanobot_config_service.get_gateway_config()
     context["llm_config"] = nanobot_config_service.get_llm_config()
+    context["catolico_config"] = nanobot_config_service.get_tenant_config("catolico")
     context["save_result"] = saved
     return templates.TemplateResponse(request, "nanobots.html", context)
 
@@ -70,8 +71,8 @@ def save_gateway_nanobot(
     maxToolIterations: str = Form(...),
     maxTokens: str = Form(...),
     contextWindowTokens: str = Form(...),
-    api_base: str = Form(...),
-    api_key: str = Form(...),
+    api_base: str = Form(""),
+    api_key: str = Form(""),
     telegram_token: str = Form(""),
     allowFrom: str = Form(""),
 ):
@@ -100,8 +101,8 @@ def save_llm_nanobot(
     maxToolIterations: str = Form(...),
     maxTokens: str = Form(...),
     contextWindowTokens: str = Form(...),
-    api_base: str = Form(...),
-    api_key: str = Form(...),
+    api_base: str = Form(""),
+    api_key: str = Form(""),
 ):
     nanobot_config_service.save_llm_config(
         {
@@ -116,6 +117,33 @@ def save_llm_nanobot(
         }
     )
     return RedirectResponse(url="/ui/nanobots?saved=LLM%20serve%20actualizado", status_code=303)
+
+
+@router.post("/ui/nanobots/tenant/catolico")
+def save_catolico_nanobot(
+    model: str = Form(...),
+    provider: str = Form(...),
+    temperature: str = Form(...),
+    maxToolIterations: str = Form(...),
+    maxTokens: str = Form(...),
+    contextWindowTokens: str = Form(...),
+    api_base: str = Form(""),
+    api_key: str = Form(""),
+):
+    nanobot_config_service.save_tenant_config(
+        "catolico",
+        {
+            "model": model,
+            "provider": provider,
+            "temperature": temperature,
+            "maxToolIterations": maxToolIterations,
+            "maxTokens": maxTokens,
+            "contextWindowTokens": contextWindowTokens,
+            "api_base": api_base,
+            "api_key": api_key,
+        }
+    )
+    return RedirectResponse(url="/ui/nanobots?saved=Católico%20serve%20actualizado", status_code=303)
 
 
 def _build_base_context(request: Request) -> dict:

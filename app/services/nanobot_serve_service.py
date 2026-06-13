@@ -18,7 +18,14 @@ log = logging.getLogger("conti.llm_service")
 
 class NanobotServeService:
     def _bridge(self) -> LLMBridge:
-        return LLMBridge(timeout=120.0)
+        return LLMBridge(timeout=600.0)
+
+    def _response_ok(self, response: Any) -> bool:
+        is_success = getattr(response, "is_success", None)
+        if isinstance(is_success, bool):
+            return is_success
+        status_code = int(getattr(response, "status_code", 0) or 0)
+        return 200 <= status_code < 300
 
     def backend_status(self) -> dict[str, Any]:
         api_base, api_key = _read_nanobot_provider()
@@ -33,8 +40,8 @@ class NanobotServeService:
             return payload
         try:
             models = self._bridge().get_models()
-            payload["reachable"] = models.is_success
-            if models.is_success:
+            payload["reachable"] = self._response_ok(models)
+            if payload["reachable"]:
                 payload["models"] = models.json().get("data", [])
             return payload
         except Exception as exc:
@@ -50,11 +57,38 @@ class NanobotServeService:
         self._raise_for_error(response)
         return response.json()
 
+    def _normalize_chat_response(self, payload: dict[str, Any], requested_model: str | None = None) -> dict[str, Any]:
+        normalized = dict(payload)
+        if requested_model:
+            normalized["model"] = requested_model
+
+        choices = normalized.get("choices")
+        if not isinstance(choices, list):
+            return normalized
+
+        cleaned_choices: list[dict[str, Any]] = []
+        for choice in choices:
+            if not isinstance(choice, dict):
+                cleaned_choices.append(choice)
+                continue
+            cleaned_choice = dict(choice)
+            message = cleaned_choice.get("message")
+            if isinstance(message, dict):
+                cleaned_message = dict(message)
+                cleaned_message.pop("reasoning", None)
+                cleaned_message.pop("reasoning_details", None)
+                cleaned_choice["message"] = cleaned_message
+            cleaned_choice.pop("reasoning", None)
+            cleaned_choice.pop("reasoning_details", None)
+            cleaned_choices.append(cleaned_choice)
+        normalized["choices"] = cleaned_choices
+        return normalized
+
     def chat_completions(self, payload: dict[str, Any]) -> dict[str, Any]:
         log.debug("[SERVICE] chat_completions payload=%.300s", json.dumps(payload, ensure_ascii=False))
         response = self._bridge().chat_completion(payload)
         self._raise_for_error(response)
-        return response.json()
+        return self._normalize_chat_response(response.json(), requested_model=payload.get("model"))
 
     def stream_chat_completions(self, payload: dict[str, Any]):
         log.debug("[SERVICE][stream] stream_chat_completions payload=%.300s", json.dumps(payload, ensure_ascii=False))
@@ -68,7 +102,7 @@ class NanobotServeService:
         return chat_to_responses_payload(chat_response, model=model)
 
     def _raise_for_error(self, response: httpx.Response) -> None:
-        if response.is_success:
+        if self._response_ok(response):
             return
         detail = response.text
         try:

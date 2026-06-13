@@ -45,5 +45,22 @@
             <button type="submit">Guardar LLM Serve</button>
         </form>
     </article>
+
+    <article class="card">
+        <h2>Tenant: Católico</h2>
+        <p class="muted">Archivo: {{ catolico_config.path }}</p>
+        <form method="post" action="/ui/nanobots/tenant/catolico" class="stack">
+            <label>Model <input type="text" name="model" value="{{ catolico_config.editable.model }}"></label>
+            <label>Provider <input type="text" name="provider" value="{{ catolico_config.editable.provider }}" list="catolico-providers"></label>
+            <datalist id="catolico-providers">{% for provider in catolico_config.provider_options %}<option value="{{ provider }}">{% endfor %}</datalist>
+            <label>Temperature <input type="number" step="0.01" name="temperature" value="{{ catolico_config.editable.temperature }}"></label>
+            <label>Max Tool Iterations <input type="number" name="maxToolIterations" value="{{ catolico_config.editable.maxToolIterations }}"></label>
+            <label>Max Tokens <input type="number" name="maxTokens" value="{{ catolico_config.editable.maxTokens }}"></label>
+            <label>Context Window Tokens <input type="number" name="contextWindowTokens" value="{{ catolico_config.editable.contextWindowTokens }}"></label>
+            <label>API Base <input type="text" name="api_base" value="{{ catolico_config.editable.api_base }}"></label>
+            <label>API Key <input type="text" name="api_key" value="{{ catolico_config.editable.api_key }}"></label>
+            <button type="submit">Guardar Católico Serve</button>
+        </form>
+    </article>
 </section>
 {% endblock %}

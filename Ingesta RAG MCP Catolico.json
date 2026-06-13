@@ -1,0 +1,471 @@
+{
+  "name": "Ingesta RAG MCP Catolico",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "7d623f58-6be9-44d2-9f52-a11369f2f2f7",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1180,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://ai.contamela.com/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "scan_documentos_nuevos",
+          "mode": "list",
+          "cachedResultName": "scan_documentos_nuevos"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "store": "catolico",
+            "dry_run": true,
+            "include_procesados": true,
+            "max_files": 50
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "dry_run",
+              "displayName": "dry_run",
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            },
+            {
+              "id": "overwrite",
+              "displayName": "overwrite",
+              "required": false,
+              "display": true,
+              "type": "boolean",
+              "removed": true
+            },
+            {
+              "id": "include_procesados",
+              "displayName": "include_procesados",
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            },
+            {
+              "id": "max_files",
+              "displayName": "max_files",
+              "required": false,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        -940,
+        120
+      ],
+      "id": "ab4d965f-dfb9-4960-b89c-df53a868d638",
+      "name": "MCP Dry Run"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json;\n\nfunction parseMaybeJson(value) {\n  if (value == null) return null;\n  if (typeof value === 'object') return value;\n  if (typeof value === 'string') {\n    try {\n      return JSON.parse(value);\n    } catch {\n      return null;\n    }\n  }\n  return null;\n}\n\nlet result = raw.result ?? raw.output ?? raw.data ?? raw;\n\nif (Array.isArray(raw.content) && raw.content.length > 0) {\n  const textPayload = raw.content.find((entry) => entry?.type === 'text')?.text ?? raw.content[0]?.text;\n  const parsedText = parseMaybeJson(textPayload);\n  if (parsedText && typeof parsedText === 'object') {\n    result = parsedText;\n  }\n}\n\nif (result?.content && Array.isArray(result.content) && result.content.length > 0) {\n  const innerText = result.content.find((entry) => entry?.type === 'text')?.text ?? result.content[0]?.text;\n  const parsedInner = parseMaybeJson(innerText);\n  if (parsedInner && typeof parsedInner === 'object') {\n    result = parsedInner;\n  }\n}\n\nconst archivos = Number(result?.archivos_encontrados ?? 0);\n\nreturn [{\n  json: {\n    archivos_encontrados: Number.isFinite(archivos) ? archivos : 0,\n    stores_escaneados: result?.stores_escaneados ?? [],\n    archivos: Array.isArray(result?.archivos) ? result.archivos : [],\n    raw\n  }\n}];"
+      },
+      "id": "f1628536-c3ba-4fb5-b24f-17595e66f04c",
+      "name": "Normalizar Dry Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.archivos_encontrados }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "9bc17bc2-ac95-4d1e-87f4-f7731575e91c",
+      "name": "¿Hay archivos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://ai.contamela.com/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "scan_documentos_nuevos",
+          "mode": "list",
+          "cachedResultName": "scan_documentos_nuevos"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "store": "catolico",
+            "dry_run": false,
+            "overwrite": false,
+            "include_procesados": true,
+            "max_files": 5
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "display": true,
+              "type": "string"
+            },
+            {
+              "id": "dry_run",
+              "displayName": "dry_run",
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            },
+            {
+              "id": "overwrite",
+              "displayName": "overwrite",
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            },
+            {
+              "id": "include_procesados",
+              "displayName": "include_procesados",
+              "required": false,
+              "display": true,
+              "type": "boolean"
+            },
+            {
+              "id": "max_files",
+              "displayName": "max_files",
+              "required": false,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        20
+      ],
+      "id": "3e983874-e1fb-455e-8748-3f9f0bf8a4b3",
+      "name": "MCP Lanzar Ingesta"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json;\n\nfunction parseMaybeJson(value) {\n  if (value == null) return null;\n  if (typeof value === 'object') return value;\n  if (typeof value === 'string') {\n    try {\n      return JSON.parse(value);\n    } catch {\n      return null;\n    }\n  }\n  return null;\n}\n\nlet result = raw.result ?? raw.output ?? raw.data ?? raw;\n\nif (Array.isArray(raw.content) && raw.content.length > 0) {\n  const textPayload = raw.content.find((entry) => entry?.type === 'text')?.text ?? raw.content[0]?.text;\n  const parsedText = parseMaybeJson(textPayload);\n  if (parsedText && typeof parsedText === 'object') {\n    result = parsedText;\n  }\n}\n\nif (result?.content && Array.isArray(result.content) && result.content.length > 0) {\n  const innerText = result.content.find((entry) => entry?.type === 'text')?.text ?? result.content[0]?.text;\n  const parsedInner = parseMaybeJson(innerText);\n  if (parsedInner && typeof parsedInner === 'object') {\n    result = parsedInner;\n  }\n}\n\nconst jobs = Array.isArray(result?.jobs) ? result.jobs : [];\nconst jobIds = jobs.map((j) => j.job_id).filter(Boolean);\n\nreturn [{\n  json: {\n    jobs_lanzados: Number(result?.jobs_lanzados ?? jobIds.length),\n    job_ids: jobIds,\n    jobs,\n    message: result?.message ?? 'Batch lanzado',\n    include_procesados: Boolean(result?.include_procesados),\n    batch_started_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "6959e5af-b713-425f-a613-d5834e42de9d",
+      "name": "Guardar Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "minutes"
+      },
+      "id": "70c28422-995c-4bc1-bf7d-0e4dd7474eef",
+      "name": "Esperar 10 min",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://ai.contamela.com/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "list_rag_ingest_jobs",
+          "mode": "list",
+          "cachedResultName": "list_rag_ingest_jobs"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "limit": 500
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "limit",
+              "displayName": "limit",
+              "required": false,
+              "display": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        500,
+        20
+      ],
+      "id": "6f4ea0e6-cff5-4a2e-90b6-11bb7a5e8dce",
+      "name": "MCP Listar Jobs"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json;\n\nfunction parseMaybeJson(value) {\n  if (value == null) return null;\n  if (typeof value === 'object') return value;\n  if (typeof value === 'string') {\n    try {\n      return JSON.parse(value);\n    } catch {\n      return null;\n    }\n  }\n  return null;\n}\n\nlet result = raw.result ?? raw.output ?? raw.data ?? raw;\n\nif (Array.isArray(raw.content) && raw.content.length > 0) {\n  const textPayload = raw.content.find((entry) => entry?.type === 'text')?.text ?? raw.content[0]?.text;\n  const parsedText = parseMaybeJson(textPayload);\n  if (parsedText && typeof parsedText === 'object') {\n    result = parsedText;\n  }\n}\n\nif (result?.content && Array.isArray(result.content) && result.content.length > 0) {\n  const innerText = result.content.find((entry) => entry?.type === 'text')?.text ?? result.content[0]?.text;\n  const parsedInner = parseMaybeJson(innerText);\n  if (parsedInner && typeof parsedInner === 'object') {\n    result = parsedInner;\n  }\n}\n\nconst jobs = Array.isArray(result?.jobs) ? result.jobs : [];\n\nlet batchIds = [];\ntry {\n  const fromGuardarBatch = $('Guardar Batch').first().json;\n  if (Array.isArray(fromGuardarBatch?.job_ids)) {\n    batchIds = fromGuardarBatch.job_ids;\n  }\n} catch (e) {\n  batchIds = [];\n}\n\nconst batchJobs = jobs.filter((j) => batchIds.includes(j.job_id));\n\nconst summary = {\n  total: batchJobs.length,\n  queued: batchJobs.filter((j) => j.status === 'queued').length,\n  running: batchJobs.filter((j) => j.status === 'running').length,\n  uploading: batchJobs.filter((j) => j.status === 'uploading').length,\n  completed: batchJobs.filter((j) => j.status === 'completed').length,\n  failed: batchJobs.filter((j) => j.status === 'failed').length,\n  skipped_duplicate: batchJobs.filter((j) => j.status === 'skipped_duplicate').length\n};\n\nconst pendientes = summary.queued + summary.running + summary.uploading;\nconst hasPending = pendientes > 0;\n\nreturn [{\n  json: {\n    batch_job_ids: batchIds,\n    batch_jobs: batchJobs,\n    summary,\n    pendientes,\n    hasPending\n  }\n}];"
+      },
+      "id": "d7901e1f-f6fb-4f92-91f1-7b35907f0660",
+      "name": "Evaluar Estado Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hasPending }}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "6f7e6201-2d78-4cca-ad4c-a89bb1dff26a",
+      "name": "¿Quedan pendientes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        980,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $json.summary || {};\nconst texto = `Ingesta RAG catolico finalizada. Total: ${s.total ?? 0}, completed: ${s.completed ?? 0}, skipped_duplicate: ${s.skipped_duplicate ?? 0}, failed: ${s.failed ?? 0}.`;\nreturn [{ json: { store: 'catolico', estado: 'finalizado', summary: s, mensaje: texto } }];"
+      },
+      "id": "d7c9800c-0bc4-4605-a6ca-8bc486f34e39",
+      "name": "Resumen Final",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "store",
+              "value": "catolico"
+            },
+            {
+              "name": "estado",
+              "value": "sin_archivos"
+            },
+            {
+              "name": "mensaje",
+              "value": "No hay archivos nuevos en documentos_nuevos/catolico."
+            }
+          ],
+          "number": [
+            {
+              "name": "archivos_encontrados",
+              "value": "={{ $json.archivos_encontrados }}"
+            }
+          ]
+        }
+      },
+      "id": "5c727546-1f4b-4bd1-b22d-87e3c5f4928b",
+      "name": "Sin Archivos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "MCP Dry Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Dry Run": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Dry Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Dry Run": {
+      "main": [
+        [
+          {
+            "node": "¿Hay archivos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay archivos?": {
+      "main": [
+        [
+          {
+            "node": "MCP Lanzar Ingesta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sin Archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Lanzar Ingesta": {
+      "main": [
+        [
+          {
+            "node": "Guardar Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Batch": {
+      "main": [
+        [
+          {
+            "node": "Esperar 10 min",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 10 min": {
+      "main": [
+        [
+          {
+            "node": "MCP Listar Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Listar Jobs": {
+      "main": [
+        [
+          {
+            "node": "Evaluar Estado Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar Estado Batch": {
+      "main": [
+        [
+          {
+            "node": "¿Quedan pendientes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Quedan pendientes?": {
+      "main": [
+        [
+          {
+            "node": "Esperar 10 min",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resumen Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "9f081a41-cf7b-48d4-8257-5973c4c325de",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

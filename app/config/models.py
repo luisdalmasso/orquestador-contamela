@@ -52,12 +52,19 @@ class ProvidersConfig(BaseModel):
     openai_compatible: dict[str, Any] = Field(default_factory=dict)
 
 
+class RagConfig(BaseModel):
+    base_url: str = "http://flamehaven:8000"
+    api_key_env: str = "FLAMEHAVEN_API_KEY"
+    default_store: str = "default"
+
+
 class AppConfig(BaseModel):
     server: ServerConfig = Field(default_factory=ServerConfig)
     llm_emulation: LLMEmulationConfig = Field(default_factory=LLMEmulationConfig)
     providers: ProvidersConfig = Field(default_factory=ProvidersConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
+    rag: RagConfig = Field(default_factory=RagConfig)
 
     def redacted_dict(self) -> dict[str, Any]:
         data = self.model_dump()

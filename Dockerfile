@@ -14,7 +14,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Verificar instalaciones
+# Verificar instalaciones básicas disponibles antes de Python deps
 RUN tmux -V && node --version && npm --version
 
 # Install Python dependencies first (cached layer)
@@ -24,6 +24,11 @@ RUN uv pip install --system --no-cache -r requirements.txt
 # Copy the full source and install nanobot upstream
 COPY nanobot/ nanobot/
 RUN uv pip install --system --no-cache ./nanobot
+
+# Forzar httpx moderno antes de cambiar a usuario nanobot
+# (nanobot instala 0.13.3 en ~/.local que pisa el sistema y rompe openai)
+RUN pip install --no-cache-dir --upgrade "httpx>=0.27.0" "httpcore>=1.0.0" && \
+    pip uninstall -y watchfiles 2>/dev/null || true
 
 # Copy conti backend sources
 COPY app/ app/
@@ -57,6 +62,10 @@ RUN mkdir -p /home/nanobot/.clawteam
 RUN chown -R 1000:1000 /app
 RUN chown -R 1000:1000 /home/nanobot
 RUN chown -R 1000:1000 /home/nanobot/.clawteam
+
+# Asegurar que no quede httpx viejo en el home del usuario que pise el sistema
+RUN rm -rf /home/nanobot/.local/lib/python3.12/site-packages/httpx* \
+           /home/nanobot/.local/lib/python3.12/site-packages/httpcore*
 
 
 # Configurar PATH para que ambos comandos estén disponibles

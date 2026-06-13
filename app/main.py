@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi import Query
 from fastapi.staticfiles import StaticFiles
 
+from app.chat.router import router as chat_router
 from app.config.loader import load_config, reload_config
 from app.llm_emulation.router import router as llm_router
 from app.mcp.router import router as mcp_router
@@ -23,6 +24,7 @@ app.mount("/ui/static", StaticFiles(directory=str(WEB_DIR / "static")), name="ui
 app.include_router(web_router)
 app.include_router(mcp_router)
 app.include_router(llm_router)
+app.include_router(chat_router)
 
 
 @app.get("/health")

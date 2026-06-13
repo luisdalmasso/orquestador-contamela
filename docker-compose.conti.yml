@@ -10,6 +10,8 @@ services:
       - CONTI_BACKEND_CONFIG=/app/config/app_config.json
       # Telegram
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      # RAG Flamehaven
+      - FLAMEHAVEN_API_KEY=sk_live_80b128933b234efc9c49b3da44931851
     volumes:
       # Nanobot workspace
       #- ./nanobot/workspace:/code/nanobot/workspace
@@ -21,8 +23,12 @@ services:
       # Voice
       - ./voice:/code/voice
       - ./conti_home:/home/nanobot/
+      # Tenant homes for chat nanobots
+      - /contenedores/tenants:/tenants
       - /desarrollo:/desarrollo
       - /compose:/compose:ro
+      - /compose/documentos_listos:/compose/documentos_listos
+      - /compose/documentos_nuevos:/compose/documentos_nuevos
       - /var/run/docker.sock:/var/run/docker.sock
       - ./claw_data:/app/data
       # Hot-reload: app bindeada para desarrollo sin rebuild
@@ -36,6 +42,8 @@ services:
       - "9007:9001"
       - "9001:9001"
       - "8765:8765"
+      # Tenant nanobot serve ports
+      - "8766:8766"
     mem_limit: 24g
     cpus: 4
     cap_add:
@@ -60,8 +68,10 @@ services:
       start_period: 30s
     networks:
       - desarrollo_odoo-network-dev
+      - compose_odoo-network
 
 networks:
   desarrollo_odoo-network-dev: 
     external: true
-
+  compose_odoo-network:    
+    external: true

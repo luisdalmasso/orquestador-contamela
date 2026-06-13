@@ -30,5 +30,10 @@
   "ui": {
     "enabled": true,
     "title": "Conti MCP Console"
+  },
+  "rag": {
+    "base_url": "http://flamehaven:8000",
+    "api_key_env": "FLAMEHAVEN_API_KEY",
+    "default_store": "default"
   }
 }

@@ -49,6 +49,18 @@ class NanobotConfigService:
         self._write_json(config_path, updated)
         return self.get_llm_config()
 
+    def get_tenant_config(self, tenant_id: str) -> dict[str, Any]:
+        path = Path(f"/tenants/{tenant_id}/.nanobot/config.json")
+        payload = self._load_json(path, fallback=None)
+        return self._build_payload(f"tenant_{tenant_id}", path, payload, include_telegram=False)
+
+    def save_tenant_config(self, tenant_id: str, form_data: dict[str, str]) -> dict[str, Any]:
+        path = Path(f"/tenants/{tenant_id}/.nanobot/config.json")
+        config = self._load_json(path, fallback=None)
+        updated = self._apply_form(config, form_data, include_telegram=False)
+        self._write_json(path, updated)
+        return self.get_tenant_config(tenant_id)
+
     def ensure_llm_config(self) -> Path:
         return self._resolve_llm_path(create_if_missing=True)
 
