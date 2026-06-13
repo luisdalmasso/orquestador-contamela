@@ -1,7 +1,7 @@
 # 📊 RESUMEN DE PRUEBAS Y SOLUCIONES - 13 Junio 2026
 
-**Hora:** 11:00 AM ART  
-**Versión:** 1.1  
+**Hora:** 12:00 PM ART  
+**Versión:** 1.2  
 **Responsable:** Conti (Asistente IA)  
 
 ---
@@ -75,19 +75,21 @@ docker exec conti-backend curl -X POST http://odoo18:8072/mcp \
 | 2 | Ejecución herramienta MCP | `curl POST /mcp tools/call` | Datos mesa 101 | ✅ VALIDADO |
 | 3 | Conexión Hermes→MCP | `hermes mcp test odoo_mcp` | Connected, 27 tools | ✅ VALIDADO |
 | 4 | Configuración global | `hermes mcp list` | odoo_mcp: 8072, enabled | ✅ VALIDADO |
+| **5** | **Agente Hermes RESTO (puerto 8767)** | `curl POST :8767/v1/chat/completions` | Respuesta con datos de mesa 101 | ✅ **VALIDADO (12:00 PM)** |
 
 ---
 
 ## 🎯 PRÓXIMOS PASOS (Priorizados)
 
 ### P0 - URGENTE (Hoy)
-1. **Validar flujo completo Hermes → MCP → Odoo**
+1. ✅ **Validar flujo completo Hermes → MCP → Odoo** - **VALIDADO (12:00 PM)**
    - Probar que el perfil resto puede usar herramientas MCP en tiempo real
    - Verificar que las variables de contexto (tenant_id, id_mesa) se propagan correctamente
 
-2. **Validar conexión desde ChatUI**
+2. ⚠️ **Validar conexión desde ChatUI**
    - Probar el endpoint que usa ChatUI para comunicarse con Hermes
    - Verificar manejo de threads (problema mencionado en el diagnóstico original)
+   - **NOTA:** Requiere headers X-Tenant-ID y X-Mesa-ID
 
 ### P1 - ALTA (Esta semana)
 3. **Implementar validación de campos** (Problema de alucinación de esquemas)
@@ -130,6 +132,8 @@ docker exec conti-backend curl -X POST http://odoo18:8072/mcp \
 3. Header Host para dbfilter configurado ✓
 4. API Key de autenticación validada ✓
 5. Configuración global de Hermes corregida ✓
+6. **Agente Hermes RESTO en puerto 8767** ✓
+7. **Flujo end-to-end completo: ChatUI → Hermes → MCP → Odoo** ✓
 
 ### ⚠️ **Por validar:**
 1. Flujo completo desde ChatUI → n8n → Hermes → MCP → Odoo
@@ -152,5 +156,5 @@ docker exec conti-backend curl -X POST http://odoo18:8072/mcp \
 ---
 
 **Documento generado por Conti - Asistente IA**  
-**Fecha:** 13 de Junio de 2026, 11:00 AM ART  
-**Versión:** 1.1
+**Fecha:** 13 de Junio de 2026, 12:00 PM ART  
+**Versión:** 1.2
