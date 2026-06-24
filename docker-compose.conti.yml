@@ -8,42 +8,80 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - CONTI_BACKEND_CONFIG=/app/config/app_config.json
+      - HERMES_HOME=/app/hermes_profiles/contihome
+      - KILOCODE_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6Im9hdXRoL2dvb2dsZToxMDg3NDY4Njc5OTUwMjQ3ODY5MzAiLCJhcGlUb2tlblBlcHBlciI6ImVmOThjYjFiLTc4MjEtNDcyOC05YzdlLTQxYjQ1ODdlZmQ4YyIsInZlcnNpb24iOjMsImlhdCI6MTc4MjI3NjM4NCwiZXhwIjoxOTM5OTU2Mzg0fQ.XjgRKLTN70oGW5lxBpwBMObfIgBBdMyIS4tkPXv0c38
+      - DEEPSEEK_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6Im9hdXRoL2dvb2dsZToxMDg3NDY4Njc5OTUwMjQ3ODY5MzAiLCJhcGlUb2tlblBlcHBlciI6bnVsbCwidmVyc2lvbiI6MywiaWF0IjoxNzczODQxNTU3LCJleHAiOjE5MzE1MjE1NTd9.Y4JwaJ7Jl-slgeIfCzPuPgv-BaHyvuNTHj25ojqp0IE
       # Telegram
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - MERCADOPAGO_ACCESS_TOKEN=${MERCADOPAGO_ACCESS_TOKEN}
+      - MERCADOPAGO_PUBLIC_KEY=${MERCADOPAGO_PUBLIC_KEY}
+      - MERCADOPAGO_SANDBOX=${MERCADOPAGO_SANDBOX}
+      - MERCADOPAGO_SUCCESS_URL=${MERCADOPAGO_SUCCESS_URL}
+      - MERCADOPAGO_FAILURE_URL=${MERCADOPAGO_FAILURE_URL}
+      - MERCADOPAGO_PENDING_URL=${MERCADOPAGO_PENDING_URL}
+      - MERCADOPAGO_NOTIFICATION_URL=${MERCADOPAGO_NOTIFICATION_URL}
+      # MCP Odoo — credenciales para el servidor MCP en odoo18
+      - CONTI_MCP_API_KEY=sk-conti-mcp-write
+      - ODOO_TENANT_ID=resto
+      - MESA_ID=1
       # RAG Flamehaven
       - FLAMEHAVEN_API_KEY=sk_live_80b128933b234efc9c49b3da44931851
+      # Gemini (metadata enrichment en ingesta RAG)
+      - GEMINI_API_KEY=AIzaSyBoKn0azg46YLwTUmTJGWGr8emXSUHD2_I
+      # SpineDigest (resumidor de documentos) - usa Gemini como backend
+      - SPINEDIGEST_LLM_PROVIDER=google
+      - SPINEDIGEST_LLM_MODEL=gemini-2.0-flash
+      - SPINEDIGEST_LLM_API_KEY=AIzaSyBoKn0azg46YLwTUmTJGWGr8emXSUHD2_I
+      - SPINEDIGEST_CACHE_DIR=/compose/documentos_listos/.spinedigest_cache
+      # OpenHands LLM via Mistral API — modelo mistral-small-latest
+      - OPENHANDS_LLM_MODEL=mistral/mistral-small-latest
+      - OPENHANDS_LLM_BASE_URL=https://api.mistral.ai/v1
+      - OPENHANDS_LLM_API_KEY=KkwZJdkcmtP3zKYRdOhyHltpxJxUarna
+      - OPENHANDS_LLM_MAX_TOKENS=4000
     volumes:
-      # Nanobot workspace
-      #- ./nanobot/workspace:/code/nanobot/workspace
-      # Nanobot skills
-      #- ./nanobot/skills:/code/nanobot/skills
-      #- ./nanobot:/home/conti/.nanobot
       # Google Workspace (credentials + token)
       - ./google-workspace:/code/google-workspace
       # Voice
       - ./voice:/code/voice
+      # HOME del usuario nanobot dentro del contenedor (SOUL.md, .env, etc).
+      # Nota: la carpeta se llama "nanobot" por histórico, pero hoy sólo
+      # contiene el HOME compartido del usuario de runtime.
       - ./conti_home:/home/nanobot/
-      # Tenant homes for chat nanobots
-      - /contenedores/tenants:/tenants
       - /desarrollo:/desarrollo
-      - /compose:/compose:ro
-      - /compose/documentos_listos:/compose/documentos_listos
-      - /compose/documentos_nuevos:/compose/documentos_nuevos
+      # /compose ahora es RW porque el circuito "produccion" necesita
+      # ejecutar git checkout/merge/push para promover develop→main.
+      # El agente NO edita archivos de código acá directamente — solo
+      # opera git. Cambios de código en /compose se siguen haciendo
+      # por el flujo develop→main (nunca manualmente).
+      - /compose:/compose
       - /var/run/docker.sock:/var/run/docker.sock
       - ./claw_data:/app/data
       # Hot-reload: app bindeada para desarrollo sin rebuild
       - ./app:/app/app
+      # Hermes profiles (hot-reload de configuración sin rebuild)
+      - ./app/hermes_profiles:/app/hermes_profiles
       # Configuración de los agentes (Arquitecto, DevOps, Developer)
       - /desarrollo/config/team.toml:/app/config/team.toml:ro
       - /desarrollo/shared_skills:/app/skills:ro # Tus scripts de python con skills
     ports:
-      - "18790:18790"
-      - "8080:8080"
       - "9007:9001"
       - "9001:9001"
-      - "8765:8765"
-      # Tenant nanobot serve ports
-      - "8766:8766"
+      # Hermes API servers (per-profile)
+      - "8766:8766"  # católico
+      - "8767:8767"  # resto
+      - "8768:8768"  # odoo (ERP multi-tenant)
+      - "8769:8769"  # odoo-mendoza (backend staff OCRL Mendoza)
+      - "8770:8770"  # mendoza (frontend cliente OCRL Mendoza)
+      # Hermes API server del perfil default (contihome) — usado por Chainlit orquestadores
+      - "8642:8642"
+      # Hermes gateway (contihome / default)
+      - "18791:18791"
+      # Hermes dashboard
+      - "9119:9119"
+      # OpenHands Agent Server (API REST del agente)
+      - "3011:3000"
+      # OpenHands Web GUI (frontend textual web en :3001 interno)
+      - "3012:3001"
     mem_limit: 24g
     cpus: 4
     cap_add:
@@ -60,7 +98,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- http://127.0.0.1:9001/health >/dev/null && wget -qO- http://127.0.0.1:8765/health >/dev/null",
+          "wget -qO- http://127.0.0.1:9001/v1/chat/health >/dev/null"
         ]
       interval: 30s
       timeout: 10s
@@ -69,6 +107,63 @@ services:
     networks:
       - desarrollo_odoo-network-dev
       - compose_odoo-network
+
+  # Sourcebot: code-search / RAG sobre repos git.
+  # Comparte las redes con compose-db-1 (Postgres) y redis_odoo (Redis),
+  # por lo que los resuelve directamente por nombre sin shims.
+  # DB `sourcebot` ya creada en compose-db-1. Redis DB 14 (la más alta libre
+  # en el rango default 0-15, ya que las DBs 0/2/15 están en uso por
+  # django-api celery, otros servicios y Evolution API respectivamente).
+  sourcebot:
+    build:
+      context: ./sourcebot
+      dockerfile: Dockerfile
+    image: conti-sourcebot:latest
+    container_name: conti-sourcebot
+    restart: unless-stopped
+    user: sourcebot
+    depends_on:
+      - conti-backend
+    ports:
+      - "3010:3000"
+    volumes:
+      - ./sourcebot/config.json:/data/config.json:ro
+      - sourcebot_data:/data
+      - /desarrollo:/desarrollo:ro
+      - /compose:/compose:ro
+      # El propio backend: indexa /contenedores/conti-backend
+      # (orquestador-contamela, branch main) desde el working tree local
+      - /contenedores/conti-backend:/contenedores/conti-backend:ro
+    environment:
+      - CONFIG_PATH=/data/config.json
+      - AUTH_URL=http://localhost:3010
+      - AUTH_SECRET=${SOURCEBOT_AUTH_SECRET:-000000000000000000000000000000000}
+      - SOURCEBOT_ENCRYPTION_KEY=${SOURCEBOT_ENCRYPTION_KEY:-00000000000000000000000000000000}
+      # Conexión directa a compose-db-1 por nombre DNS (misma red).
+      - DATABASE_URL=postgresql://odoo:odoo@compose-db-1:5432/sourcebot
+      # Conexión directa a redis_odoo por nombre DNS (misma red).
+      # DB 14: la más alta libre en el rango default 0-15 de Redis.
+      # DBs en uso por el stack compartido (/compose/producion.yml):
+      #   0  -> django-api celery broker + result backend
+      #   2  -> otros servicios (chainlit/redis_odoo container)
+      #   15 -> Evolution API (REDIS_DB=15)
+      # 1-13 están libres; elegimos 14 para mantener distancia del cluster bajo
+      # y reducir probabilidad de colisión con servicios futuros.
+      - REDIS_URL=redis://redis_odoo:6379/14
+      - SOURCEBOT_TELEMETRY_DISABLED=true
+      - TZ=America/Argentina/Mendoza
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - desarrollo_odoo-network-dev
+      - compose_odoo-network
+
+volumes:
+  sourcebot_data: null
 
 networks:
   desarrollo_odoo-network-dev: 

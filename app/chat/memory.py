@@ -11,7 +11,10 @@ import logging
 import os
 from typing import Any
 
-import redis
+try:
+    import redis
+except ImportError:  # pragma: no cover - depende del entorno
+    redis = None
 
 log = logging.getLogger("conti.memory")
 
@@ -35,7 +38,9 @@ class RedisSessionManager:
         self._client: redis.Redis | None = None
 
     @property
-    def client(self) -> redis.Redis:
+    def client(self):
+        if redis is None:
+            raise RuntimeError("redis no está instalado en este entorno")
         if self._client is None:
             self._client = redis.Redis(
                 host=self._host,

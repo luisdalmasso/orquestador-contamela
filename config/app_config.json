@@ -1,39 +1,105 @@
 {
-  "server": {
-    "host": "0.0.0.0",
-    "port": 9001,
-    "reload": false
-  },
-  "llm_emulation": {
-    "enabled": true,
-    "default_model": "conti-default",
-    "streaming_enabled": true,
-    "mode": "nanobot_serve",
-    "serve_profile": "conti-llm-serve",
-    "serve_base_url": "http://127.0.0.1:8765"
-  },
-  "providers": {
-    "active": "openai_compatible",
-    "openai_compatible": {
-      "api_base": "${OPENAI_BASE_URL}",
-      "api_key_env": "OPENAI_API_KEY"
+    "server": {
+        "host": "0.0.0.0",
+        "port": 9001,
+        "reload": false
+    },
+    "llm_emulation": {
+        "enabled": true,
+        "default_model": "conti-default",
+        "streaming_enabled": true,
+        "mode": "nanobot_serve",
+        "serve_profile": "conti-llm-serve",
+        "serve_base_url": "http://127.0.0.1:8765"
+    },
+    "providers": {
+        "active": "openai_compatible",
+        "openai_compatible": {
+            "api_base": "${OPENAI_BASE_URL}",
+            "api_key_env": "OPENAI_API_KEY"
+        }
+    },
+    "paths": {
+        "home_root": "/home/nanobot",
+        "development_repo": "/desarrollo",
+        "production_repo": "/compose",
+        "onboarding_file": "/app/docs/onboarding.md",
+        "onboarding_brief_file": "/app/docs/onboarding_brief.md",
+        "rules_file": "/app/docs/rules.md"
+    },
+    "ui": {
+        "enabled": true,
+        "title": "Conti MCP Console"
+    },
+    "rag": {
+        "base_url": "http://flamehaven:8000",
+        "api_key_env": "FLAMEHAVEN_API_KEY",
+        "default_store": "default"
+    },
+    "odoo": {
+        "default_connection": "prod",
+        "default_lang": "es_AR",
+        "default_tz": "America/Argentina/Buenos_Aires",
+        "connect_timeout_seconds": 30,
+        "max_retries": 3,
+        "ocr_enabled": true,
+        "payment_proof_max_mb": 1,
+        "connections": {
+            "prod": {
+                "url": "http://odoo18:8069",
+                "db": "demo",
+                "host_header": "demo.contamela.com",
+                "username_env": "ODOO_USERNAME",
+                "password_env": "ODOO_PASSWORD",
+                "username_fallback_envs": [
+                    "ODOO_USER",
+                    "ODOOUSER"
+                ],
+                "password_fallback_envs": [
+                    "ODOOPASSWORD"
+                ],
+                "default_username": "demo",
+                "default_password": "demo"
+            },
+            "dev": {
+                "url": "http://odoo18_dev:8069",
+                "db": "demo",
+                "username_env": "ODOO_DEV_USERNAME",
+                "password_env": "ODOO_DEV_PASSWORD",
+                "username_fallback_envs": [
+                    "ODOO_DEV_USER"
+                ],
+                "password_fallback_envs": [],
+                "default_username": "demo",
+                "default_password": "demo"
+            },
+            "resto": {
+                "url": "http://odoo18:8069",
+                "db": "resto",
+                "host_header": "resto.contamela.com",
+                "username_env": "ODOO_USERNAME",
+                "password_env": "ODOO_PASSWORD",
+                "username_fallback_envs": [
+                    "ODOO_USER",
+                    "ODOOUSER"
+                ],
+                "password_fallback_envs": [
+                    "ODOOPASSWORD"
+                ],
+                "default_username": "resto",
+                "default_password": "resto"
+            }
+        }
+    },
+    "mercadopago": {
+        "access_token_env": "MERCADOPAGO_ACCESS_TOKEN",
+        "public_key_env": "MERCADOPAGO_PUBLIC_KEY",
+        "sandbox_env": "MERCADOPAGO_SANDBOX",
+        "api_base_url": "https://api.mercadopago.com",
+        "success_url": "http://localhost:9001/odoo/mercadopago/success",
+        "failure_url": "http://localhost:9001/odoo/mercadopago/failure",
+        "pending_url": "http://localhost:9001/odoo/mercadopago/pending",
+        "notification_url": "http://localhost:9001/odoo/mercadopago/webhook",
+        "request_timeout_seconds": 30
     }
-  },
-  "paths": {
-    "home_root": "/home/nanobot",
-    "development_repo": "/desarrollo",
-    "production_repo": "/compose",
-    "onboarding_file": "/app/docs/onboarding.md",
-    "onboarding_brief_file": "/app/docs/onboarding_brief.md",
-    "rules_file": "/app/docs/rules.md"
-  },
-  "ui": {
-    "enabled": true,
-    "title": "Conti MCP Console"
-  },
-  "rag": {
-    "base_url": "http://flamehaven:8000",
-    "api_key_env": "FLAMEHAVEN_API_KEY",
-    "default_store": "default"
-  }
 }

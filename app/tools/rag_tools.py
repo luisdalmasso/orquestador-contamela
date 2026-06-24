@@ -24,7 +24,10 @@ Stores / colecciones:
 """
 from __future__ import annotations
 
+import json
+import logging
 import os
+import re
 import shutil
 import tempfile
 import threading
@@ -33,6 +36,244 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 from uuid import uuid4
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Metadata enrichment via Gemini
+# ---------------------------------------------------------------------------
+
+_GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+_GEMINI_MODEL   = "gemini-2.0-flash"
+_GEMINI_API_URL = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{_GEMINI_MODEL}:generateContent?key={_GEMINI_API_KEY}"
+)
+
+_CATEGORIAS = [
+    "Liturgia", "Oraciones", "Cánticos", "Doctrina", "Dogma",
+    "Teología", "Historia", "Biblia", "Magisterio", "Noticias", "Otro"
+]
+
+_CATEGORIAS_OCRL = [
+    "Videovigilancia", "Redes", "Energia", "Audio_Video", "Alarmas",
+    "ControlAcceso", "Almacenamiento", "Pantallas", "Datacenter",
+    "Drones", "Accesorios", "Marketing", "Otro"
+]
+
+_TIPOS_DOC_OCRL = [
+    "ficha_tecnica", "datasheet", "manual", "folleto",
+    "banner_marketing", "catalogo", "presentacion", "otro"
+]
+
+
+def _enrich_metadata_with_gemini(text: str, filename: str, store: str = "catolico") -> dict:
+    """
+    Dispatcher store-aware. Mantiene compat con la firma de 2 args (default store='catolico').
+    """
+    if store == "odoo-mendoza":
+        return _enrich_ocrl_mendoza(text, filename)
+    return _enrich_catolico(text, filename)
+
+
+def _enrich_catolico(text: str, filename: str) -> dict:
+    """
+    Llama a Gemini Flash para generar metadata enriquecida del documento.
+    Devuelve dict con: titulo_corto, categoria, tags (list), autor (str|None).
+    Si falla, devuelve metadata básica derivada del filename.
+    """
+    import requests as _req
+
+    fallback = {
+        "titulo_corto": Path(filename).stem.replace("-", " ").replace("_", " ").title(),
+        "categoria": "Teología",
+        "tags": [],
+        "autor": None,
+    }
+
+    api_key = os.environ.get("GEMINI_API_KEY", _GEMINI_API_KEY)
+    if not api_key:
+        return fallback
+
+    context = text[:3000]
+    prompt = (
+        "Analiza el siguiente texto religioso/católico y genera metadatos "
+        "estructurados en JSON.\n\n"
+        f"TEXTO:\n{context}...\n\n"
+        "INSTRUCCIONES:\n"
+        '1. "titulo_corto": título descriptivo y único (máx 15 palabras).\n'
+        f'2. "categoria": UNA de {_CATEGORIAS}.\n'
+        '3. "tags": lista de 3 a 5 palabras clave en español.\n'
+        '4. "autor": nombre del autor si se menciona (ej. "Papa Francisco"), '
+        'si no, null.\n\n'
+        "Responde SOLO con JSON válido, sin bloques de código.\n"
+        'Ejemplo: {"titulo_corto": "Encíclica Fratelli Tutti", '
+        '"categoria": "Magisterio", "tags": ["fraternidad", "paz"], '
+        '"autor": "Papa Francisco"}'
+    )
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json"},
+    }
+
+    try:
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{_GEMINI_MODEL}:generateContent?key={api_key}"
+        )
+        resp = _req.post(url, json=payload, timeout=15)
+        if resp.status_code == 200:
+            result = resp.json()
+            raw = result["candidates"][0]["content"]["parts"][0]["text"]
+            data = json.loads(raw)
+            if isinstance(data, list) and data:
+                data = data[0]
+            if isinstance(data, dict):
+                return {
+                    "titulo_corto": data.get("titulo_corto") or fallback["titulo_corto"],
+                    "categoria":    data.get("categoria")    or fallback["categoria"],
+                    "tags":         data.get("tags")         or [],
+                    "autor":        data.get("autor"),
+                }
+    except Exception as exc:
+        logger.warning("Gemini metadata enrichment failed for %s: %s", filename, exc)
+
+    return fallback
+
+
+def _enrich_ocrl_mendoza(text: str, filename: str) -> dict:
+    """
+    Enrich para catalogo OCRL Mendoza (CCTV, redes, energia, etc.).
+    Devuelve: titulo_corto, marca, modelo, sku_detectado, categoria_ocrl,
+              tipo_documento, tags (list).
+    """
+    import requests as _req
+
+    fallback = {
+        "titulo_corto": Path(filename).stem.replace("-", " ").replace("_", " "),
+        "marca": None,
+        "modelo": None,
+        "sku_detectado": None,
+        "categoria_ocrl": "Otro",
+        "tipo_documento": "otro",
+        "tags": [],
+    }
+
+    api_key = os.environ.get("GEMINI_API_KEY", _GEMINI_API_KEY)
+    if not api_key:
+        return fallback
+
+    context = text[:4000]
+    prompt = (
+        "Analiza el siguiente documento de un producto del rubro CCTV / Redes / Audio-Video / "
+        "Seguridad electronica y genera metadatos estructurados en JSON.\n\n"
+        f"NOMBRE DE ARCHIVO: {filename}\n\n"
+        f"TEXTO (primeros 4000 chars):\n{context}\n\n"
+        "INSTRUCCIONES (responde SOLO con JSON valido, sin bloques de codigo):\n"
+        '1. "titulo_corto": titulo descriptivo (max 15 palabras, sin SKU).\n'
+        '2. "marca": marca comercial del producto si se identifica (Dahua, Hikvision, '
+        'Imou, Huawei, Mikrotik, Ubiquiti, TP-Link, etc.) o null.\n'
+        '3. "modelo": codigo de modelo si se identifica (ej. "DHI-ARA13-W2(R)") o null.\n'
+        '4. "sku_detectado": SKU/partnumber si aparece en el documento o null.\n'
+        f'5. "categoria_ocrl": UNA de {_CATEGORIAS_OCRL}.\n'
+        f'6. "tipo_documento": UNO de {_TIPOS_DOC_OCRL}.\n'
+        '7. "tags": lista de 4 a 8 palabras clave tecnicas en español (caracteristicas tipo '
+        '"IP67", "4MP", "PoE", "WiFi6", "3G/4G", "DDNS", "NVR", "HDMI").\n\n'
+        'Ejemplo: {"titulo_corto": "Camara Bullet 4MP Full-Color WiFi", '
+        '"marca": "Dahua", "modelo": "DHI-ARA13-W2(R)", "sku_detectado": "10613-0002", '
+        '"categoria_ocrl": "Videovigilancia", "tipo_documento": "ficha_tecnica", '
+        '"tags": ["4MP", "IP67", "WiFi", "FullColor", "audio bidireccional"]}'
+    )
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json"},
+    }
+
+    try:
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{_GEMINI_MODEL}:generateContent?key={api_key}"
+        )
+        resp = _req.post(url, json=payload, timeout=20)
+        if resp.status_code == 200:
+            result = resp.json()
+            raw = result["candidates"][0]["content"]["parts"][0]["text"]
+            data = json.loads(raw)
+            if isinstance(data, list) and data:
+                data = data[0]
+            if isinstance(data, dict):
+                return {
+                    "titulo_corto":   data.get("titulo_corto")   or fallback["titulo_corto"],
+                    "marca":          data.get("marca"),
+                    "modelo":         data.get("modelo"),
+                    "sku_detectado": data.get("sku_detectado"),
+                    "categoria_ocrl": data.get("categoria_ocrl") or fallback["categoria_ocrl"],
+                    "tipo_documento": data.get("tipo_documento") or fallback["tipo_documento"],
+                    "tags":           data.get("tags")           or [],
+                }
+    except Exception as exc:
+        logger.warning("Gemini OCRL enrichment failed for %s: %s", filename, exc)
+
+    return fallback
+
+
+def _inject_frontmatter(md_path: Path, meta: dict, source_path: str | None = None) -> None:
+    """
+    Reescribe el .md insertando (o reemplazando) un bloque YAML front-matter
+    al inicio. Emite TODOS los campos de `meta` (no sólo los del católico)
+    para soportar enriquecedores arbitrarios (ej. OCRL Mendoza con marca,
+    modelo, sku, url_odoo, etc.).
+
+    Convenciones:
+      - clave `titulo_corto` se mapea a `title:` para compat con catolico.
+      - `categoria` -> `category:`.
+      - listas -> JSON-compact (compatible con YAML flow).
+      - strings -> quoted.
+      - None -> `null`.
+      - bool/int/float -> repr literal.
+    """
+    original = md_path.read_text(encoding="utf-8")
+
+    # Si ya existe front-matter, quitarlo
+    if original.startswith("---\n"):
+        end = original.find("\n---\n", 4)
+        if end != -1:
+            original = original[end + 5:]
+
+    def _yaml_val(v):
+        if v is None:
+            return "null"
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        if isinstance(v, (int, float)):
+            return str(v)
+        if isinstance(v, (list, dict)):
+            return json.dumps(v, ensure_ascii=False)
+        # string: escapar comillas dobles
+        s = str(v).replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{s}"'
+
+    # Aliases para compat con el front-matter clasico
+    alias = {"titulo_corto": "title", "categoria": "category"}
+
+    lines = ["---"]
+    seen = set()
+    for k, v in meta.items():
+        if v is None and k in ("autor",):
+            # mantener compat: autor:null cuando catolico
+            pass
+        key_out = alias.get(k, k)
+        if key_out in seen:
+            continue
+        seen.add(key_out)
+        lines.append(f"{key_out}: {_yaml_val(v)}")
+    if source_path and "source_path" not in seen:
+        lines.append(f'source_path: {_yaml_val(source_path)}')
+    lines.append("---")
+    frontmatter = "\n".join(lines) + "\n\n"
+    md_path.write_text(frontmatter + original, encoding="utf-8")
 
 # Raíz de los volúmenes compartidos con Flamehaven
 DOCUMENTOS_LISTOS_ROOT = Path("/compose/documentos_listos")
@@ -63,6 +304,8 @@ class RagIngestJob:
     md_path: str | None = None          # path final del .md en documentos_listos
     rag_response: dict | None = None    # respuesta JSON del upload a Flamehaven
     duplicate_info: dict | None = None  # si se detectó duplicado, info del doc previo
+    enriched_metadata: dict | None = None  # metadata enriquecida por Gemini
+    move_to_done: bool = False  # si True, mover source a procesados/done/ al completar
 
     def as_dict(self) -> dict:
         return {
@@ -79,6 +322,7 @@ class RagIngestJob:
             "md_path": self.md_path,
             "rag_response": self.rag_response,
             "duplicate_info": self.duplicate_info,
+            "enriched_metadata": self.enriched_metadata,
             "error": self.error,
         }
 
@@ -158,13 +402,29 @@ def _list_store_docs(store: str, api_key: str, base_url: str) -> list[dict]:
 
 def _find_duplicate(title: str, store: str, api_key: str, base_url: str) -> dict | None:
     """
-    Busca un doc con el mismo título (filename) en el store.
-    Comparación por nombre normalizado (minúsculas, sin espacios extremos).
+    Busca un doc con el mismo nombre de archivo en el store.
+    Primero intenta por nombre de archivo en el URI (estable aunque Gemini
+    genere títulos distintos), luego fallback a comparación por título exacto.
     Devuelve el dict del doc si existe, None si no.
     """
-    needle = title.strip().lower()
+    import urllib.parse
+    # Extraer nombre de archivo del título buscado (puede ser path o solo nombre)
+    fname_needle = Path(title).name.lower()
+    needle_title = title.strip().lower()
+
     for doc in _list_store_docs(store, api_key, base_url):
-        if doc.get("title", "").strip().lower() == needle:
+        # Comparar por nombre de archivo embebido en el URI
+        uri = doc.get("uri", "")
+        if uri:
+            try:
+                decoded_uri = urllib.parse.unquote(uri)
+                fname_in_uri = Path(decoded_uri.split("/")[-1]).name.lower()
+                if fname_in_uri and fname_in_uri == fname_needle:
+                    return doc
+            except Exception:
+                pass
+        # Fallback: comparar título exacto
+        if doc.get("title", "").strip().lower() == needle_title:
             return doc
     return None
 
@@ -304,6 +564,40 @@ def _run_ingest_job(job: RagIngestJob, api_key: str, base_url: str) -> None:
             shutil.copy2(local_path, md_path)
             job.md_path = str(md_path)
 
+        # --- Metadata enrichment via Gemini (store-aware) ---
+        try:
+            md_path_obj = Path(job.md_path)
+            md_text = md_path_obj.read_text(encoding="utf-8")
+            # Strip existing front-matter before sending to Gemini
+            if md_text.startswith("---\n"):
+                end_fm = md_text.find("\n---\n", 4)
+                if end_fm != -1:
+                    md_text = md_text[end_fm + 5:]
+            enriched = _enrich_metadata_with_gemini(md_text, md_path_obj.name, store=job.store)
+
+            # Sidecar .meta.json (pre-generado por stage_rag_*.py) con cross-link
+            # a Odoo, SKU, pid, accessory_pids, etc. Tiene PRIORIDAD sobre Gemini
+            # para los campos que define.
+            try:
+                src_path = Path(job.source)
+                sidecar = src_path.with_suffix(src_path.suffix + ".meta.json")
+                if not sidecar.exists():
+                    sidecar = src_path.with_suffix(".meta.json")
+                if sidecar.exists():
+                    side = json.loads(sidecar.read_text(encoding="utf-8"))
+                    if isinstance(side, dict):
+                        # merge: sidecar pisa al enrich Gemini
+                        for k, v in side.items():
+                            if v is not None:
+                                enriched[k] = v
+            except Exception as side_exc:
+                logger.warning("Sidecar meta read failed for %s: %s", job.md_path, side_exc)
+
+            _inject_frontmatter(md_path_obj, enriched, source_path=str(md_path_obj.resolve()))
+            job.enriched_metadata = enriched
+        except Exception as exc:
+            logger.warning("Metadata enrichment skipped for %s: %s", job.md_path, exc)
+
         # Upload a Flamehaven siempre desde documentos_listos/{store}/
         job.status = "uploading"
         try:
@@ -315,9 +609,32 @@ def _run_ingest_job(job: RagIngestJob, api_key: str, base_url: str) -> None:
             job.duplicate_info = dup.existing_doc
             job.error = str(dup)
             job.finished_at = _now_ts()
+            # Eliminar también de procesados/ para que el scan avance
+            if job.move_to_done:
+                try:
+                    src = Path(job.source)
+                    md_final = Path(job.md_path) if job.md_path else None
+                    if src.exists() and src != md_final:
+                        src.unlink()
+                except Exception as mv_exc:
+                    logger.warning("No se pudo eliminar %s de procesados (dup): %s", job.source, mv_exc)
             return
         job.status = "completed"
         job.finished_at = _now_ts()
+
+        # Eliminar el source de procesados/ una vez ingestado exitosamente.
+        # El .md ya fue copiado a documentos_listos/{store}/ en CASO 3,
+        # o ya vivía ahí en CASO 1. Borrarlo de procesados evita que el
+        # siguiente scan lo vuelva a tomar.
+        if job.move_to_done:
+            try:
+                src = Path(job.source)
+                md_final = Path(job.md_path) if job.md_path else None
+                # Solo borrar si el source NO es el mismo archivo que md_path
+                if src.exists() and src != md_final:
+                    src.unlink()
+            except Exception as mv_exc:
+                logger.warning("No se pudo eliminar %s de procesados: %s", job.source, mv_exc)
 
     except Exception as exc:
         job.status = "failed"
@@ -507,6 +824,7 @@ def scan_documentos_nuevos(config, args: dict) -> dict:
                 store=store,
                 caso=caso,
                 overwrite=overwrite,
+                move_to_done=(origen == "procesados"),
             )
             JOB_STORE.create(job)
 

@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse, JSONResponse
 
-from app.llm_emulation.models import ChatCompletionRequest, ResponsesRequest
-from app.llm_emulation.nanobot_serve_bridge import NanobotServeError
-from app.llm_emulation.streaming import passthrough_stream
-from app.services.llm_service import llm_service
-from app.services.nanobot_serve_service import nanobot_serve_service
+from app.openhands_agent.service import openhands_service
 
 log = logging.getLogger("conti.llm_router")
 
@@ -23,6 +18,7 @@ def get_v1_root() -> dict:
     return {
         "status": "ok",
         "compatible_with": ["openai-base-url", "legacy-backend-ai"],
+        "backend": "openhands",
         "endpoints": {
             "models": "/v1/models",
             "chat_completions": "/v1/chat/completions",
@@ -34,61 +30,86 @@ def get_v1_root() -> dict:
 @router.get("/v1/models")
 def get_models() -> dict:
     try:
-        return llm_service.get_models()
-    except ValueError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        return openhands_service.list_models()
+    except Exception as exc:
+        log.error("[ROUTER] Error listando modelos OpenHands: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=502, detail=f"Error listando modelos del stack OpenHands: {exc}"
+        )
 
 
 @router.post("/v1/chat/completions")
-def post_chat_completions(request: ChatCompletionRequest):
-    payload = request.model_dump(exclude_none=True)
-    log.debug(
-        "[ROUTER] request recibido de Kilocode/cliente:\n%s",
-        json.dumps(payload, ensure_ascii=False, indent=2),
-    )
+async def post_chat_completions(request: Request):
     try:
-        if payload.get("stream"):
-            log.debug("[ROUTER] modo streaming activado")
-            return StreamingResponse(
-                passthrough_stream(llm_service.stream_chat_completions(payload)),
-                media_type="text/event-stream",
-            )
-        result = llm_service.chat_completions(payload)
-        log.debug(
-            "[ROUTER] respuesta enviada al cliente:\n%s",
-            json.dumps(result, ensure_ascii=False, indent=2),
+        body = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Cuerpo JSON inválido: {exc}")
+
+    auth_header = request.headers.get("Authorization", "")
+
+    if body.get("stream"):
+        log.info("[ROUTER] /v1/chat/completions (stream=true) -> OpenHands")
+
+        async def stream_generator():
+            try:
+                async for chunk in openhands_service.stream_chat_completions(
+                    body, auth_header
+                ):
+                    yield chunk
+            except Exception as exc:
+                log.error(
+                    "[ROUTER] Error en streaming OpenHands: %s", exc, exc_info=True
+                )
+                err_payload = f'data: {{"error": "{exc}"}}\n\n'.encode("utf-8")
+                yield err_payload
+
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+
+    log.info("[ROUTER] /v1/chat/completions (sync) -> OpenHands")
+    try:
+        result = openhands_service.run_task(body)
+    except Exception as exc:
+        log.error("[ROUTER] Error ejecutando OpenHands: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=502, detail=f"Error ejecutando OpenHands: {exc}"
         )
-        return result
-    except NanobotServeError as exc:
-        log.warning("[ROUTER] NanobotServeError %s: %s", exc.status_code, exc.detail)
-        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
-    except ValueError as exc:
-        log.warning("[ROUTER] ValueError: %s", exc)
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return JSONResponse(content=result)
 
 
 @router.post("/v1/responses")
-def post_responses(request: ResponsesRequest):
-    payload = request.model_dump(exclude_none=True)
-    if payload.get("stream"):
-        raise HTTPException(status_code=400, detail="stream=true no está soportado aún en /v1/responses")
+async def post_responses(request: Request):
     try:
-        return llm_service.responses(payload)
-    except ValueError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        body = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Cuerpo JSON inválido: {exc}")
+
+    if body.get("stream"):
+        raise HTTPException(
+            status_code=400, detail="stream=true no está soportado aún en /v1/responses"
+        )
+
+    log.info("[ROUTER] /v1/responses -> OpenHands")
+    try:
+        result = openhands_service.run_task(body)
+    except Exception as exc:
+        log.error("[ROUTER] Error ejecutando OpenHands: %s", exc, exc_info=True)
+        raise HTTPException(
+            status_code=502, detail=f"Error ejecutando OpenHands: {exc}"
+        )
+    return JSONResponse(content=result)
 
 
 @router.get("/llm/backend/status")
 def get_llm_backend_status() -> dict:
-    return {
-        "status": "ok",
-        "backend": nanobot_serve_service.backend_status(),
-    }
+    try:
+        return {"status": "ok", "backend": openhands_service.backend_status()}
+    except Exception as exc:
+        return {"status": "degraded", "backend": str(exc)}
 
 
 @router.post("/llm/backend/reload")
 def post_llm_backend_reload() -> dict:
-    return {
-        "status": "reloaded",
-        "backend": nanobot_serve_service.reload_backend(),
-    }
+    try:
+        return {"status": "reloaded", "backend": openhands_service.reload_backend()}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))

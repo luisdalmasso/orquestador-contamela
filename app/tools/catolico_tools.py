@@ -2,6 +2,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 import datetime
+import re
 
 def catolico_lecturas_dia(config, args: dict) -> dict:
     """
@@ -44,85 +45,39 @@ def catolico_lecturas_dia(config, args: dict) -> dict:
 
         return "\n".join(partes_texto)
 
-    def extraer_video_youtube(soup_obj):
-        titulo_tag = soup_obj.find("h2", string=lambda text: "Evangelio de hoy en vídeo" in text if text else False)
-        if not titulo_tag:
-            return None
+    def extraer_video_youtube(full_soup):
+        html_str = str(full_soup)
+        
+        # Buscar ID de video de YouTube mediante regex en todo el HTML (iframes, scripts, data-src)
+        yt_match = re.search(r'(?:youtube\.com/embed/|youtu\.be/|youtube\.com/watch\?v=)([a-zA-Z0-9_-]{11})', html_str)
+        if yt_match:
+            video_id = yt_match.group(1)
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            return f"🎥 **Evangelio de hoy en vídeo**\n<a href=\"{video_url}\" target=\"_blank\">Ver en YouTube</a>"
+            
+        # Búsqueda de iframe ofuscado por plugins de cookies
+        iframe = full_soup.find("iframe", attrs={"data-src": lambda s: s and ("youtube" in s.lower() or "youtu.be" in s.lower())})
+        if iframe:
+            return f"🎥 **Evangelio de hoy en vídeo**\n<a href=\"{iframe.get('data-src')}\" target=\"_blank\">Ver en YouTube</a>"
+            
+        return None
 
-        video_url = None
-        video_titulo = None
-
-        for elemento_siguiente in titulo_tag.find_next_siblings():
-            if elemento_siguiente.name == "h2":
-                break
-
-            iframe = elemento_siguiente.find("iframe")
-            if iframe and iframe.get("src"):
-                src = iframe.get("src")
-                if "youtube.com/embed/" in src:
-                    video_id = src.split("youtube.com/embed/")[-1].split("?")[0]
-                    video_url = f"https://www.youtube.com/watch?v={video_id}"
-                    break
-                if "youtube.com" in src or "youtu.be" in src:
-                    video_url = src
-                    break
-
-            link = elemento_siguiente.find("a", href=True)
-            if link:
-                href = link.get("href")
-                if "youtube.com" in href or "youtu.be" in href:
-                    video_url = href
-                    link_text = link.get_text(strip=True)
-                    if link_text and len(link_text) > 5 and link_text != video_url:
-                        video_titulo = link_text
-                    break
-
-        if not video_url:
-            return None
-
-        resultado = "🎥 **Evangelio de hoy en vídeo**\n"
-        if video_titulo:
-            resultado += f"**{video_titulo}**\n"
-        resultado += f'<a href="{video_url}" target="_blank">Ver en YouTube</a>'
-        return resultado
-
-    def extraer_audio_soundcloud(soup_obj):
-        titulo_tag = soup_obj.find("h2", string=lambda text: "Evangelio de hoy en audio" in text if text else False)
-        if not titulo_tag:
-            return None
-
-        audio_url = None
-        audio_titulo = None
-
-        for elemento_siguiente in titulo_tag.find_next_siblings():
-            if elemento_siguiente.name == "h2":
-                break
-
-            iframe = elemento_siguiente.find("iframe")
-            if iframe and iframe.get("src"):
-                src = iframe.get("src")
-                if "soundcloud.com" in src:
-                    audio_url = src
-                    break
-
-            link = elemento_siguiente.find("a", href=True)
-            if link:
-                href = link.get("href")
-                if "soundcloud.com" in href:
-                    audio_url = href
-                    link_text = link.get_text(strip=True)
-                    if link_text and len(link_text) > 5 and link_text != audio_url:
-                        audio_titulo = link_text
-                    break
-
-        if not audio_url:
-            return None
-
-        resultado = "🎧 **Evangelio de hoy en audio**\n"
-        if audio_titulo:
-            resultado += f"**{audio_titulo}**\n"
-        resultado += f'<a href="{audio_url}" target="_blank">Escuchar en SoundCloud</a>'
-        return resultado
+    def extraer_audio_soundcloud(full_soup):
+        html_str = str(full_soup)
+        
+        # Buscar reproductor embebido de soundcloud
+        sc_match = re.search(r'(https://w\.soundcloud\.com/player/\?url=[^"\'\s&]+)', html_str)
+        if sc_match:
+            audio_url = sc_match.group(1)
+            return f"🎧 **Evangelio de hoy en audio**\n<a href=\"{audio_url}\" target=\"_blank\">Escuchar en SoundCloud</a>"
+            
+        # Buscar enlace directo a un track
+        sc_link_match = re.search(r'(https://soundcloud\.com/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)', html_str)
+        if sc_link_match:
+            audio_url = sc_link_match.group(1)
+            return f"🎧 **Evangelio de hoy en audio**\n<a href=\"{audio_url}\" target=\"_blank\">Escuchar en SoundCloud</a>"
+            
+        return None
 
     def obtener_info_liturgica(fecha_obj):
         try:
@@ -190,8 +145,8 @@ def catolico_lecturas_dia(config, args: dict) -> dict:
         salmo = extraer_seccion(contenido_principal, ["Salmo de hoy", "Salmo"])
         evangelio = extraer_seccion(contenido_principal, ["Evangelio del día", "Evangelio"])
         reflexion = extraer_seccion(contenido_principal, ["Reflexión del Evangelio de hoy", "Reflexión"])
-        video_youtube = extraer_video_youtube(contenido_principal)
-        audio_soundcloud = extraer_audio_soundcloud(contenido_principal)
+        video_youtube = extraer_video_youtube(soup)
+        audio_soundcloud = extraer_audio_soundcloud(soup)
 
         resultado = f"{primera_lectura}\n\n"
         if segunda_lectura and "no encontrada" not in segunda_lectura:
@@ -264,29 +219,379 @@ def catolico_biblia_buscar(config, args: dict) -> dict:
     }
 
 
+def catolico_listar_titulos(config, args: dict) -> dict:
+    """
+    Lista todos los títulos y nombres de archivo de documentos ingestados
+    en el store católico. Lee el front-matter YAML de cada .md en
+    /compose/documentos_listos/{store}/ y devuelve {titulo, filename}.
+
+    Útil para validar si un documento existe antes de intentar resumirlo,
+    y para encontrar el título más similar a lo que pidió el usuario.
+    """
+    import re as _re
+
+    store = args.get("store", "catolico")
+    docs_dir = Path("/compose/documentos_listos") / store
+
+    if not docs_dir.exists():
+        return {
+            "success": False,
+            "error": f"El directorio del store '{store}' no existe.",
+            "documentos": [],
+            "total": 0,
+        }
+
+    documentos = []
+    for md_file in sorted(docs_dir.glob("*.md")):
+        try:
+            header = md_file.read_text(encoding="utf-8")[:600]
+        except Exception:
+            continue
+
+        titulo = ""
+        if header.startswith("---"):
+            # Extraer campo title del front-matter YAML
+            m = _re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', header, _re.MULTILINE)
+            if m:
+                titulo = m.group(1).strip()
+
+        # Si no hay título en front-matter, derivar del nombre de archivo
+        if not titulo:
+            titulo = md_file.stem.replace("-", " ").replace("_", " ").title()
+
+        documentos.append({
+            "titulo": titulo,
+            "filename": md_file.name,
+        })
+
+    return {
+        "success": True,
+        "store": store,
+        "total": len(documentos),
+        "documentos": documentos,
+    }
+
+
 def catolico_leer_documento(config, args: dict) -> dict:
     """
     Lee el contenido completo de un documento del RAG para que el agente pueda resumirlo.
-    Recibe la URI o nombre del documento que devolvió la búsqueda RAG.
+
+    Modos de uso:
+      1. Por URI exacta (la que devuelve search_rag): args = {"uri": "local://catolico/..."}
+      2. Por query de búsqueda (más flexible): args = {"query": "...", "store": "catolico"}
+         → busca en flamehaven, toma el doc #1 y devuelve su contenido completo.
+         → útil cuando search_rag devolvió resultados dudosos o múltiples.
     """
-    uri = args.get("uri", "")
+    import urllib.parse
+
+    uri = args.get("uri", "").strip()
+    query = args.get("query", "").strip()
+    store = args.get("store", "catolico")
+
+    # ── Modo 2: por query ───────────────────────────────────────────────────────
+    if query and not uri:
+        # Primero: búsqueda local por title en front-matter YAML (más precisa y sin RAG)
+        import re as _re
+        docs_dir = Path("/compose/documentos_listos") / store
+        query_lower = query.lower()
+        best_path = None
+        best_score = -1
+        if docs_dir.exists():
+            for md_file in docs_dir.glob("*.md"):
+                try:
+                    header = md_file.read_text(encoding="utf-8")[:500]
+                    m = _re.search(r'title:\s*(.+?)\s*$', header, _re.MULTILINE)
+                    if m:
+                        title_val = m.group(1).strip().strip('"').strip("'").lower()
+                        # Calcular score: palabras del query que aparecen en el título
+                        words = [w for w in _re.split(r'\W+', query_lower) if len(w) > 2]
+                        score = sum(1 for w in words if w in title_val)
+                        # Bonus: el título empieza con la query (coincidencia exacta al inicio)
+                        if title_val.startswith(query_lower):
+                            score += 10
+                        if score > best_score:
+                            best_score = score
+                            best_path = md_file
+                except Exception:
+                    pass
+        if best_path and best_score > 0:
+            uri = str(best_path)
+        else:
+            # Fallback: búsqueda en flamehaven RAG
+            try:
+                from app.tools.rag_search_tools import _flamehaven_post, _get_rag_creds, _clean_sources
+                api_key, base_url = _get_rag_creds(config)
+                result = _flamehaven_post("/api/search", {
+                    "query": query,
+                    "store_name": store,
+                    "search_mode": "hybrid",
+                    "max_tokens": 1,
+                }, api_key, base_url)
+                sources = _clean_sources(result.get("sources", []))
+                if not sources:
+                    return {"success": False, "error": f"No se encontraron documentos para: {query}"}
+                # Tomar la URI del mejor resultado
+                uri = sources[0].get("uri", "")
+                if not uri:
+                    return {"success": False, "error": "El resultado de búsqueda no tiene URI."}
+            except Exception as e:
+                return {"success": False, "error": f"Error buscando en RAG: {e}"}
+
+
     if not uri:
-        return {"success": False, "error": "Debe proporcionar la URI del documento."}
-    
-    try:
+        return {"success": False, "error": "Debe proporcionar 'uri' o 'query'."}
+
+    # ── Resolver URI → path real ───────────────────────────────────────────────
+    # La URI tiene forma: local://catolico/%2Fcompose%2F...%2Farchivo.md
+    # o bien puede venir ya como path: /compose/documentos_listos/...
+    resolved_path = None
+
+    if uri.startswith("local://"):
+        # Extraer la parte después del store name
+        # local://catolico/<encoded_path>
+        rest = uri.split("local://", 1)[1]
+        # rest = "catolico/%2Fcompose%2F..."
+        slash_idx = rest.find("/")
+        if slash_idx != -1:
+            encoded_path = rest[slash_idx + 1:]
+            decoded = urllib.parse.unquote(encoded_path)
+            resolved_path = Path(decoded)
+    else:
+        # Asumir que es un path directo o nombre de archivo
         path = Path(uri)
-        if not path.is_absolute():
-            # Intentar resolver dentro de los stores si es relativo
-            path = Path("/compose/documentos_listos/rag_teo") / uri
-        
-        if not path.exists():
-             return {"success": False, "error": f"El documento no existe en la ruta {uri}"}
-             
-        contenido = path.read_text(encoding="utf-8")
+        if path.is_absolute():
+            resolved_path = path
+        else:
+            resolved_path = Path("/compose/documentos_listos/catolico") / uri
+
+    if resolved_path is None or not resolved_path.exists():
+        # Último intento: buscar por nombre de archivo en documentos_listos
+        if resolved_path:
+            fname = resolved_path.name
+            candidates = list(Path("/compose/documentos_listos/catolico").glob(fname))
+            if candidates:
+                resolved_path = candidates[0]
+            else:
+                return {
+                    "success": False,
+                    "error": f"Documento no encontrado: {resolved_path}",
+                    "hint": "Buscá el documento en https://contamela.com/docs_chatui o usá search_rag para obtener una URI válida."
+                }
+        else:
+            return {"success": False, "error": f"No se pudo resolver la URI: {uri}"}
+
+    try:
+        contenido = resolved_path.read_text(encoding="utf-8")
+        # Quitar YAML front-matter si existe para devolver contenido limpio
+        if contenido.startswith("---\n"):
+            end = contenido.find("\n---\n", 4)
+            if end != -1:
+                contenido = contenido[end + 5:]
+        # Construir URL pública: /compose/documentos_listos/catolico/archivo.md → https://contamela.com/docs_chatui/catolico/archivo.md
+        rel = None
+        try:
+            rel = resolved_path.relative_to("/compose/documentos_listos")
+        except ValueError:
+            pass
+        public_url = f"https://contamela.com/docs_chatui/{rel}" if rel else None
         return {
             "success": True,
-            "message": f"Documento {path.name} leído exitosamente. Procede a generar el resumen para el usuario.",
-            "content": contenido
+            "filename": resolved_path.name,
+            "path": str(resolved_path),
+            "public_url": public_url,
+            "size_chars": len(contenido),
+            "content": contenido,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+def catolico_resumir_documento(config, args: dict) -> dict:
+    """
+    Genera un resumen estructurado de un documento católico usando SpineDigest.
+    Pipeline: chunking → grafo de conocimiento → defensa multi-agente.
+    Cachea el resultado .sdpub para evitar re-procesar el mismo documento.
+    """
+    import subprocess
+    import hashlib
+    import os
+    import urllib.parse
+
+    query = args.get("query", "").strip()
+    store = args.get("store", "catolico").strip()
+    prompt = args.get("prompt", (
+        "Extrae las enseñanzas doctrinales principales, citas bíblicas y "
+        "magisteriales, argumentos teológicos centrales y conclusiones pastorales. "
+        "Mantén el orden lógico del documento original."
+    ))
+
+    if not query:
+        return {"success": False, "error": "Parámetro 'query' requerido."}
+
+    # ── 1. Resolver el archivo .md usando la búsqueda local por front-matter ──
+    base_dir = Path(f"/compose/documentos_listos/{store}")
+    if not base_dir.exists():
+        return {"success": False, "error": f"Store no encontrado: {store}"}
+
+    query_words = [w for w in query.lower().split() if len(w) > 2]
+    best_score = 0
+    best_path = None
+
+    for md_file in base_dir.glob("*.md"):
+        try:
+            header = md_file.read_text(encoding="utf-8")[:500]
+        except Exception:
+            continue
+        title_line = ""
+        for line in header.splitlines():
+            if line.lower().startswith("title:"):
+                title_line = line.split(":", 1)[1].strip().strip('"').lower()
+                break
+        if not title_line:
+            continue
+        score = sum(1 for w in query_words if w in title_line)
+        if title_line.startswith(query.lower()):
+            score += 10
+        if score > best_score:
+            best_score = score
+            best_path = md_file
+
+    if not best_path or best_score == 0:
+        return {
+            "success": False,
+            "error": f"No se encontró un documento con título similar a: {query}",
+        }
+
+    # ── 2. Determinar ruta de caché ──
+    cache_dir = Path("/compose/documentos_listos/.spinedigest_cache")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Hash basado en contenido del archivo + prompt para invalidar si cambia
+    try:
+        content_hash = hashlib.md5(best_path.read_bytes()).hexdigest()[:12]
+    except Exception:
+        content_hash = best_path.stem[:12]
+
+    sdpub_path = cache_dir / f"{best_path.stem}-{content_hash}.sdpub"
+    md_out_path = cache_dir / f"{best_path.stem}-{content_hash}.md"
+
+    titulo = best_path.stem.replace("-", " ").title()
+    # Intentar extraer título del front-matter
+    try:
+        header = best_path.read_text(encoding="utf-8")[:500]
+        for line in header.splitlines():
+            if line.lower().startswith("title:"):
+                titulo = line.split(":", 1)[1].strip().strip('"')
+                break
+    except Exception:
+        pass
+
+    # ── 3. Si ya existe el resumen en caché, devolver directamente ──
+    if md_out_path.exists():
+        try:
+            summary = md_out_path.read_text(encoding="utf-8").strip()
+            _rel = None
+            try:
+                _rel = best_path.relative_to("/compose/documentos_listos")
+            except ValueError:
+                pass
+            return {
+                "success": True,
+                "titulo": titulo,
+                "content": summary,
+                "source_file": str(best_path),
+                "public_url": f"https://contamela.com/docs_chatui/{_rel}" if _rel else None,
+                "cached": True,
+            }
+        except Exception:
+            pass  # Si falla la lectura, regenerar
+
+    # ── 4. Ejecutar spinedigest ──
+    env = os.environ.copy()
+    # Credenciales LLM (Gemini)
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if gemini_key:
+        env["SPINEDIGEST_LLM_PROVIDER"] = "google"
+        env["SPINEDIGEST_LLM_MODEL"] = "gemini-2.0-flash"
+        env["SPINEDIGEST_LLM_API_KEY"] = gemini_key
+    # Asegurar que el prompt viaja como var de entorno (evita escaping en CLI)
+    env["SPINEDIGEST_PROMPT"] = prompt
+
+    cmd = [
+        "spinedigest",
+        "--input", str(best_path),
+        "--output", str(md_out_path),
+        "--output-format", "markdown",
+    ]
+
+    # Si ya existe el .sdpub, usarlo para re-exportar sin re-llamar LLM
+    if sdpub_path.exists():
+        cmd = [
+            "spinedigest",
+            "--input", str(sdpub_path),
+            "--output", str(md_out_path),
+            "--output-format", "markdown",
+        ]
+    else:
+        # Primera vez: también guardar el .sdpub para futuras re-exportaciones
+        cmd = [
+            "spinedigest",
+            "--input", str(best_path),
+            "--output", str(sdpub_path),
+        ]
+
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=1200, env=env
+        )
+        if result.returncode != 0:
+            return {
+                "success": False,
+                "error": f"SpineDigest falló: {result.stderr[:500]}",
+            }
+    except subprocess.TimeoutExpired:
+        return {"success": False, "error": "SpineDigest tardó demasiado (>20 min)."}
+    except FileNotFoundError:
+        return {"success": False, "error": "spinedigest no está instalado en el PATH."}
+
+    # Si generamos el .sdpub, ahora exportar a Markdown
+    if not md_out_path.exists() and sdpub_path.exists():
+        export_cmd = [
+            "spinedigest",
+            "--input", str(sdpub_path),
+            "--output", str(md_out_path),
+            "--output-format", "markdown",
+        ]
+        try:
+            result2 = subprocess.run(
+                export_cmd, capture_output=True, text=True, timeout=60, env=env
+            )
+            if result2.returncode != 0:
+                return {
+                    "success": False,
+                    "error": f"SpineDigest export falló: {result2.stderr[:500]}",
+                }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    if not md_out_path.exists():
+        return {"success": False, "error": "SpineDigest no generó el archivo de salida."}
+
+    try:
+        summary = md_out_path.read_text(encoding="utf-8").strip()
+    except Exception as e:
+        return {"success": False, "error": f"Error leyendo resumen: {e}"}
+
+    _rel = None
+    try:
+        _rel = best_path.relative_to("/compose/documentos_listos")
+    except ValueError:
+        pass
+    return {
+        "success": True,
+        "titulo": titulo,
+        "content": summary,
+        "source_file": str(best_path),
+        "public_url": f"https://contamela.com/docs_chatui/{_rel}" if _rel else None,
+        "cached": False,
+    }

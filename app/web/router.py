@@ -22,18 +22,18 @@ templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 router = APIRouter(tags=["web-ui"])
 
 
-@router.get("/")
+@router.get("/", summary="Redirección a UI")
 def root_redirect() -> RedirectResponse:
     return RedirectResponse(url="/ui", status_code=307)
 
 
-@router.get("/ui")
+@router.get("/ui", summary="Panel Principal de UI")
 def ui_index(request: Request):
     context = _build_base_context(request)
     return templates.TemplateResponse(request, "index.html", context)
 
 
-@router.get("/ui/settings")
+@router.get("/ui/settings", summary="Configuraciones del Sistema")
 def ui_settings(request: Request):
     context = _build_base_context(request)
     context["config_json"] = json.dumps(context["config"], indent=2, ensure_ascii=False)
@@ -41,19 +41,19 @@ def ui_settings(request: Request):
     return templates.TemplateResponse(request, "settings.html", context)
 
 
-@router.get("/ui/tools")
+@router.get("/ui/tools", summary="Explorador de Herramientas MCP")
 def ui_tools(request: Request):
     context = _build_base_context(request)
     return templates.TemplateResponse(request, "tools.html", context)
 
 
-@router.get("/ui/rules")
+@router.get("/ui/rules", summary="Visualizador de Reglas y Onboarding")
 def ui_rules(request: Request):
     context = _build_base_context(request)
     return templates.TemplateResponse(request, "rules.html", context)
 
 
-@router.get("/ui/nanobots")
+@router.get("/ui/nanobots", summary="Configuración de Nanobots")
 def ui_nanobots(request: Request, saved: str | None = None):
     context = _build_base_context(request)
     context["gateway_config"] = nanobot_config_service.get_gateway_config()
@@ -63,7 +63,7 @@ def ui_nanobots(request: Request, saved: str | None = None):
     return templates.TemplateResponse(request, "nanobots.html", context)
 
 
-@router.post("/ui/nanobots/gateway")
+@router.post("/ui/nanobots/gateway", summary="Guardar Configuración del Gateway")
 def save_gateway_nanobot(
     model: str = Form(...),
     provider: str = Form(...),
@@ -93,7 +93,7 @@ def save_gateway_nanobot(
     return RedirectResponse(url="/ui/nanobots?saved=Gateway%20actualizado", status_code=303)
 
 
-@router.post("/ui/nanobots/llm")
+@router.post("/ui/nanobots/llm", summary="Guardar Configuración del Emulador LLM")
 def save_llm_nanobot(
     model: str = Form(...),
     provider: str = Form(...),
@@ -119,7 +119,7 @@ def save_llm_nanobot(
     return RedirectResponse(url="/ui/nanobots?saved=LLM%20serve%20actualizado", status_code=303)
 
 
-@router.post("/ui/nanobots/tenant/catolico")
+@router.post("/ui/nanobots/tenant/catolico", summary="Guardar Configuración del Tenant Católico")
 def save_catolico_nanobot(
     model: str = Form(...),
     provider: str = Form(...),

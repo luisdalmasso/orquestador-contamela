@@ -4,6 +4,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+HOST_BACKEND_ROOT = Path("/contenedores/conti-backend")
 
 
 def resolve_runtime_path(configured_path: str) -> Path:
@@ -12,6 +13,10 @@ def resolve_runtime_path(configured_path: str) -> Path:
         return configured
 
     path_text = configured.as_posix()
+    if path_text.startswith("/contenedores/conti-backend/"):
+        candidate = REPO_ROOT / path_text.removeprefix("/contenedores/conti-backend/")
+        if candidate.exists():
+            return candidate
     if path_text.startswith("/app/"):
         candidate = REPO_ROOT / path_text.removeprefix("/app/")
         if candidate.exists():

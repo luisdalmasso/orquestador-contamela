@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel, Field
 
 from app.core.tool_models import ToolCallResponse
 from app.mcp.schemas import MCPCallRequest
@@ -13,6 +15,47 @@ from app.services.registry_service import registry_service
 
 
 router = APIRouter(prefix="/mcp", tags=["mcp"])
+
+
+# --- Modelos de Respuesta para Swagger ---
+class MCPRootResponse(BaseModel):
+    status: str = Field(default="ok")
+    transport: str = Field(..., description="Transporte utilizado (ej. http-json+sse)")
+    compatible_with: list[str] = Field(..., description="Lista de clientes compatibles")
+    endpoints: dict[str, str] = Field(..., description="Mapa de endpoints disponibles")
+    tools_count: int = Field(..., description="Cantidad de herramientas registradas")
+
+class MCPToolItem(BaseModel):
+    name: str = Field(..., description="Nombre de la herramienta")
+    description: str = Field(default="", description="Descripción funcional de la herramienta")
+    inputSchema: dict[str, Any] = Field(..., description="JSON Schema de los argumentos esperados")
+
+class MCPToolsResponse(BaseModel):
+    status: str = Field(default="ok")
+    tools: list[MCPToolItem] = Field(..., description="Lista de herramientas MCP disponibles")
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "status": "ok",
+                "tools": [
+                    {
+                        "name": "read_file",
+                        "description": "Lee el contenido de un archivo en el sistema.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {"path": {"type": "string"}}
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+class MCPExecuteResponse(BaseModel):
+    success: bool = Field(..., description="Indica si la ejecución fue exitosa")
+    result: Any | None = Field(default=None, description="Resultado de la ejecución de la herramienta")
+    error: str | None = Field(default=None, description="Mensaje de error si la ejecución falló")
 
 
 def _mcp_root_payload() -> dict:
@@ -102,8 +145,17 @@ def _sse_response(request: Request, post_path: str = "/mcp") -> StreamingRespons
     )
 
 
-@router.get("")
-@router.get("/")
+@router.get(
+    "",
+    response_model=MCPRootResponse,
+    summary="Información del servidor MCP",
+    description="Devuelve las capacidades del servidor, endpoints disponibles y cantidad de tools registradas."
+)
+@router.get(
+    "/",
+    response_model=MCPRootResponse,
+    summary="Información del servidor MCP (Alias)"
+)
 def get_mcp_root(request: Request):
     accept = request.headers.get("accept", "")
     if "text/event-stream" in accept:
@@ -111,8 +163,15 @@ def get_mcp_root(request: Request):
     return _mcp_root_payload()
 
 
-@router.post("")
-@router.post("/")
+@router.post(
+    "",
+    summary="Endpoint JSON-RPC 2.0 (Estándar MCP)",
+    description="Punto de entrada principal para clientes MCP nativos que utilizan el protocolo de transporte JSON-RPC 2.0."
+)
+@router.post(
+    "/",
+    summary="Endpoint JSON-RPC 2.0 (Alias)"
+)
 def post_mcp_root(request: dict):
     request_id = request.get("id")
     method = request.get("method")
@@ -160,16 +219,25 @@ def post_mcp_root(request: dict):
     return _jsonrpc_error(request_id, -32601, f"Método no soportado: {method}")
 
 
-@router.get("/tools")
+@router.get(
+    "/tools",
+    response_model=MCPToolsResponse,
+    summary="Listar Herramientas (Tools)",
+    description="Devuelve el catálogo completo de herramientas (MCP Tools) disponibles junto con sus respectivos JSON Schemas de entrada."
+)
 def get_mcp_tools() -> dict:
-    registry = registry_service()
     return {
         "status": "ok",
-        "tools": registry.list_tools(),
+        "tools": _mcp_tools_payload(),
     }
 
 
-@router.post("/call")
+@router.post(
+    "/call",
+    response_model=ToolCallResponse,
+    summary="Invocar una herramienta (REST)",
+    description="Permite invocar una herramienta específica pasando su nombre y argumentos en formato JSON estándar (REST)."
+)
 def post_mcp_call(request: MCPCallRequest) -> ToolCallResponse:
     registry = registry_service()
     try:
@@ -181,7 +249,12 @@ def post_mcp_call(request: MCPCallRequest) -> ToolCallResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@router.post("/execute", response_model=None)
+@router.post(
+    "/execute",
+    response_model=MCPExecuteResponse,
+    summary="Ejecutar herramienta (Legacy)",
+    description="Endpoint alternativo para la ejecución de herramientas, compatible con integraciones anteriores y clientes que no siguen el esquema MCP estándar."
+)
 def post_mcp_execute(request: dict):
     tool_name = request.get("tool_name") or request.get("tool") or request.get("name")
     arguments = request.get("arguments") or request.get("params") or {}
@@ -198,7 +271,27 @@ def post_mcp_execute(request: dict):
         return JSONResponse(status_code=400, content={"success": False, "result": None, "error": str(exc)})
 
 
-@router.get("/sse")
-@router.get("/sse/")
+@router.get(
+    "/sse",
+    summary="Conexión Server-Sent Events (SSE)",
+    description="Establece una conexión persistente Server-Sent Events (SSE) para clientes MCP que soportan transporte bidireccional."
+)
+@router.get(
+    "/sse/",
+    summary="Conexión Server-Sent Events (SSE) (Alias)"
+)
 def get_mcp_sse(request: Request) -> StreamingResponse:
     return _sse_response(request, post_path="/mcp")
+
+
+@router.post(
+    "/sse",
+    summary="Endpoint JSON-RPC via SSE transport (POST)",
+    description="Recibe mensajes JSON-RPC 2.0 de clientes que usan transporte SSE (ej. hermes-agent)."
+)
+@router.post(
+    "/sse/",
+    summary="Endpoint JSON-RPC via SSE transport (POST, Alias)"
+)
+def post_mcp_sse(request: dict):
+    return post_mcp_root(request)

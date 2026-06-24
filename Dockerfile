@@ -1,94 +1,109 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS base
 
-# Install Node.js 20 for the WhatsApp bridge
+# Dependencias del sistema (incluyendo gnupg para NodeSource)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl ca-certificates gnupg git bubblewrap openssh-client tmux tmuxinator wget build-essential docker.io && \
-    mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends nodejs && \
-    apt-get purge -y gnupg && \
-    apt-get autoremove -y && \
+    apt-get install -y --no-install-recommends \
+      curl ca-certificates gnupg git bubblewrap openssh-client tmux tmuxinator wget \
+      build-essential docker.io libmagic1 poppler-utils tesseract-ocr libgl1 libglib2.0-0 unzip && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Verificar instalaciones básicas disponibles antes de Python deps
-RUN tmux -V && node --version && npm --version
+# Node.js 22
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies first (cached layer)
-COPY requirements.txt ./
+# SpineDigest global
+RUN npm install -g spinedigest --build-from-source
+
+# Python deps (cacheable)
+COPY requirements.txt .
 RUN uv pip install --system --no-cache -r requirements.txt
 
-# Copy the full source and install nanobot upstream
-COPY nanobot/ nanobot/
-RUN uv pip install --system --no-cache ./nanobot
+# Poppler-utils provee pdftoppm/pdftocairo para pdf2image (runtime)
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils && rm -rf /var/lib/apt/lists/*
 
-# Forzar httpx moderno antes de cambiar a usuario nanobot
-# (nanobot instala 0.13.3 en ~/.local que pisa el sistema y rompe openai)
-RUN pip install --no-cache-dir --upgrade "httpx>=0.27.0" "httpcore>=1.0.0" && \
-    pip uninstall -y watchfiles 2>/dev/null || true
+# Rust + Bun
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.cargo/bin:/root/.bun/bin:${PATH}"
 
-# Copy conti backend sources
-COPY app/ app/
-COPY config/ config/
-COPY docs/ docs/
-COPY README.md ./README.md
+# --- Submodules ---
+COPY vendor/OpenHands ./vendor/OpenHands
+RUN uv pip install --system --no-cache -e ./vendor/OpenHands
 
-# Build the WhatsApp bridge
-WORKDIR /app/nanobot/bridge
-RUN git config --global --add url."https://github.com/".insteadOf ssh://git@github.com/ && \
-    git config --global --add url."https://github.com/".insteadOf git@github.com: && \
-    npm install && npm run build
+# oh-my-pi: instala omp-rpc (cliente Python para el RPC del agente) y compila
+# los binarios nativos con bun. robomp y omp-rpc viven bajo vendor/oh-my-pi/python/.
+COPY vendor/oh-my-pi ./vendor/oh-my-pi
+RUN uv pip install --system --no-cache -e ./vendor/oh-my-pi/python/omp-rpc && \
+    uv pip install --system --no-cache -e ./vendor/oh-my-pi/python/robomp && \
+    cd vendor/oh-my-pi && bun setup
+
+# Ponytail: las reglas viven en AGENTS.md. El "wrapper" lo implementamos en
+# Python dentro del service.py (no requiere instalar paquete externo).
+COPY vendor/ponytail ./vendor/ponytail
+
+# Hermes-Agent build stage
+FROM base AS hermes-build
+RUN git clone --depth=1 https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent && \
+    cd /tmp/hermes-agent/web && npm install && npm run build
+
+# Final stage
+FROM base
+
 WORKDIR /app
 
-# Instalar ClawTeam desde GitHub
-RUN git clone https://github.com/HKUDS/ClawTeam.git /tmp/clawteam \
-    && cd /tmp/clawteam \
-    && pip install --no-cache-dir -e . \
-    && pip install --no-cache-dir -e ".[p2p]" \
-    && rm -rf /tmp/clawteam
+# Copiar código con permisos correctos
+COPY --chown=1000:1000 app/ app/
+COPY --chown=1000:1000 config/ config/
+COPY --chown=1000:1000 docs/ docs/
+COPY --chown=1000:1000 README.md .
+COPY --chown=1000:1000 app/hermes_profiles/ app/hermes_profiles/
 
-# Create non-root user and config directory
-RUN useradd -m -u 1000 -s /bin/bash nanobot 
+# Copiar Hermes-Agent ya compilado
+COPY --from=hermes-build /tmp/hermes-agent /tmp/hermes-agent
+RUN uv pip install --system --no-cache /tmp/hermes-agent
 
-#&& \
-#    mkdir -p /home/nanobot/.nanobot && \
-#    chown -R nanobot:nanobot /home/nanobot /app
+# WhatsApp bridge
+RUN SP="$(python3 -c "import sysconfig; print(sysconfig.get_paths()['purelib'])")" && \
+    mkdir -p "$SP/scripts" && cp -r /tmp/hermes-agent/scripts/whatsapp-bridge "$SP/scripts/whatsapp-bridge" && \
+    cd "$SP/scripts/whatsapp-bridge" && npm install --omit=dev --no-audit --no-fund && \
+    chown -R 1000:1000 "$SP/scripts/whatsapp-bridge"
 
-RUN mkdir -p /home/nanobot/.clawteam
+# OpenHands Agent Canvas (GUI web oficial).
+# Paquete npm `@openhands/agent-canvas` (no confundir con `openhands web`
+# que es una TUI textual del CLI). Este es el frontend Next.js completo
+# que se ve en github.com/OpenHands/OpenHands. Conecta a nuestro
+# agent-server local en :3000 vía `AGENT_SERVER_URL`.
+RUN npm install -g @openhands/agent-canvas
 
-RUN chown -R 1000:1000 /app
-RUN chown -R 1000:1000 /home/nanobot
-RUN chown -R 1000:1000 /home/nanobot/.clawteam
+# Entry point: copiarlo como root (puede escribir en /usr/local/bin)
+# y aplicar sed/chmod antes del cambio a USER nanobot para evitar el
+# "Permission denied" al crear el archivo temporal de sed -i.
+COPY entrypoint_hermes.sh /usr/local/bin/entrypoint_hermes.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint_hermes.sh && \
+    chmod +x /usr/local/bin/entrypoint_hermes.sh && \
+    chown 1000:1000 /usr/local/bin/entrypoint_hermes.sh
 
-# Asegurar que no quede httpx viejo en el home del usuario que pise el sistema
-RUN rm -rf /home/nanobot/.local/lib/python3.12/site-packages/httpx* \
-           /home/nanobot/.local/lib/python3.12/site-packages/httpcore*
+# Usuario no root.
+RUN useradd -m -u 1000 -s /bin/bash nanobot && \
+    mkdir -p /home/nanobot/.clawteam && \
+    chown -R 1000:1000 /home/nanobot /app /home/nanobot/.clawteam
 
-
-# Configurar PATH para que ambos comandos estén disponibles
+USER nanobot
+ENV HOME=/home/nanobot
 ENV PATH="/usr/local/bin:${PATH}"
 ENV PYTHONPATH="/app:${PYTHONPATH}"
-
-# Configurar variables de entorno para ClawTeam
 ENV CLAWTEAM_DATA_DIR=/nanobot/.clawteam
 ENV CLAWTEAM_WORKSPACE=auto
 ENV CLAWTEAM_SKIP_PERMISSIONS=true
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+# Puertos expuestos
+# Hermes UI -> 3001
+# OpenHands UI -> 3002
+EXPOSE 3001 3002 8642 8766 8767 8768 8769 8770 9001 9119 18791
 
-USER nanobot
-ENV HOME=/home/nanobot
-
-# Gateway default port
-EXPOSE 18790
-EXPOSE 8080
-EXPOSE 8765
-EXPOSE 9001
-
-#RUN chmod +x /usr/local/bin/entrypoint.sh
-ENTRYPOINT ["entrypoint.sh"]
-#CMD ["status"]
+ENTRYPOINT ["entrypoint_hermes.sh"]

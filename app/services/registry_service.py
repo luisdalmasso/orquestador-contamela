@@ -6,7 +6,7 @@ from app.config.loader import load_config
 from app.core import categories, visibility
 from app.core.tool_models import ToolDefinition
 from app.core.tool_registry import ToolRegistry
-from app.tools import config_tools, container_tools, document_tools, filesystem, git_tools, rag_tools, rag_search_tools, search_literal, system_status, translation_tools, catolico_tools
+from app.tools import catolico_tools, config_tools, container_tools, document_tools, filesystem, git_tools, odoo_tools, rag_search_tools, rag_tools, search_literal, sheet_tools, system_status, translation_tools
 
 class RegistryService:
     def __init__(self) -> None:
@@ -161,6 +161,442 @@ class RegistryService:
                 tags=["config", "rules"],
             ),
             config_tools.get_rules,
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_test_connection",
+                description="Prueba la conexión configurada contra Odoo y valida autenticación y acceso básico a productos.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string", "description": "Perfil Odoo configurado, por ejemplo prod o dev."},
+                        "db": {"type": "string"},
+                        "url": {"type": "string"},
+                        "username": {"type": "string"},
+                        "password": {"type": "string"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "health", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_test_connection(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_list_products",
+                description="Lista productos de Odoo con filtros de búsqueda, categoría, stock y rango de precios. Por rendimiento, el stock (qty_available) NO se incluye por defecto: pasar has_stock=true o include_stock=true para obtenerlo.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "search": {"type": "string"},
+                        "producto": {"type": "string"},
+                        "category_ids": {"type": "string", "description": "IDs separados por coma."},
+                        "has_stock": {"type": "boolean", "description": "Filtra solo productos con stock > 0 (incluye qty_available). Computar stock es lento."},
+                        "include_stock": {"type": "boolean", "description": "Incluye qty_available en la respuesta sin filtrar. Úsalo solo si necesitas stock; es costoso."},
+                        "price_min": {"type": "number"},
+                        "price_max": {"type": "number"},
+                        "limit": {"type": "integer"},
+                        "offset": {"type": "integer"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "products", "catalog", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_list_products(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_get_product_detail",
+                description="Obtiene el detalle completo de un producto puntual desde Odoo.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "product_id": {"type": "integer"},
+                    },
+                    "required": ["product_id"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "products", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_get_product_detail(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_get_ai_context",
+                description="Devuelve contexto comercial y de cliente desde Odoo para uso por agentes o asistentes.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "cuit_dni": {"type": "string"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "context", "ai", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_get_ai_context(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_search_clients",
+                description="Busca clientes en Odoo por CUIT/DNI o nombre y devuelve coincidencias normalizadas.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "cuit_dni": {"type": "string"},
+                        "name": {"type": "string"},
+                        "limit": {"type": "integer"},
+                        "offset": {"type": "integer"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "clients", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_search_clients(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_list_clients",
+                description="Lista clientes de Odoo con paginación y filtros opcionales por nombre o CUIT/DNI.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "cuit_dni": {"type": "string"},
+                        "name": {"type": "string"},
+                        "limit": {"type": "integer"},
+                        "offset": {"type": "integer"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "clients", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_list_clients(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_create_client",
+                description="Crea un cliente en Odoo con nombre, CUIT/DNI y datos de contacto básicos.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "name": {"type": "string"},
+                        "cuit_dni": {"type": "string"},
+                        "email": {"type": "string"},
+                        "phone": {"type": "string"},
+                    },
+                    "required": ["name", "cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "clients", "write"],
+            ),
+            lambda args: odoo_tools.odoo_create_client(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_create_order",
+                description="Crea un pedido de venta draft en Odoo para un cliente existente.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "client_id": {"type": "integer"},
+                    },
+                    "required": ["client_id"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "sales", "write"],
+            ),
+            lambda args: odoo_tools.odoo_create_order(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_create_cart",
+                description="Busca un cliente por CUIT/DNI y crea un carrito/pedido draft asociado.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "cuit_dni": {"type": "string"},
+                    },
+                    "required": ["cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "sales", "cart", "write"],
+            ),
+            lambda args: odoo_tools.odoo_create_cart(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_add_item_to_cart",
+                description="Agrega un producto a un carrito/pedido draft validando stock y límites por producto.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "product_id": {"type": "integer"},
+                        "quantity": {"type": "integer"},
+                    },
+                    "required": ["order_id", "product_id", "quantity"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "sales", "cart", "write"],
+            ),
+            lambda args: odoo_tools.odoo_add_item_to_cart(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_get_cart_summary",
+                description="Devuelve el resumen de un carrito/pedido y valida que pertenezca al cliente indicado.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "cuit_dni": {"type": "string"},
+                    },
+                    "required": ["order_id", "cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "sales", "cart", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_get_cart_summary(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_confirm_cart",
+                description="Confirma un pedido draft y devuelve los totales resultantes en Odoo.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                    },
+                    "required": ["order_id"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "sales", "cart", "write"],
+            ),
+            lambda args: odoo_tools.odoo_confirm_cart(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_cancel_cart",
+                description="Cancela un pedido siempre que no esté ya finalizado o cancelado.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                    },
+                    "required": ["order_id"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "sales", "cart", "write"],
+            ),
+            lambda args: odoo_tools.odoo_cancel_cart(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_create_invoice",
+                description="Crea y publica una factura desde un pedido confirmado, validando titularidad del cliente.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "cuit_dni": {"type": "string"},
+                    },
+                    "required": ["order_id", "cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "invoice", "write"],
+            ),
+            lambda args: odoo_tools.odoo_create_invoice(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_register_payment",
+                description="Registra un pago sobre la factura publicada de un pedido y deja trazabilidad en el chatter.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "payment_id": {"type": "string"},
+                        "amount": {"type": "number"},
+                        "payment_method": {"type": "string"},
+                    },
+                    "required": ["order_id", "payment_id", "amount"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "invoice", "payment", "write"],
+            ),
+            lambda args: odoo_tools.odoo_register_payment(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_upload_payment_proof",
+                description="Adjunta un comprobante PDF a un pedido de venta y ejecuta OCR opcional.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "cuit_dni": {"type": "string"},
+                        "filename": {"type": "string"},
+                        "file_path": {"type": "string"},
+                        "file_base64": {"type": "string"},
+                        "run_ocr": {"type": "boolean"},
+                    },
+                    "required": ["order_id", "cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "attachments", "payment-proof", "write"],
+            ),
+            lambda args: odoo_tools.odoo_upload_payment_proof(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_process_attachment_ocr",
+                description="Procesa OCR o extracción de texto sobre un adjunto PDF existente en Odoo.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "attachment_id": {"type": "integer"},
+                        "order_id": {"type": "integer"},
+                    },
+                    "required": ["attachment_id", "order_id"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "attachments", "ocr", "write"],
+            ),
+            lambda args: odoo_tools.odoo_process_attachment_ocr(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_process_pdf_document",
+                description="Procesa un PDF general y devuelve texto extraído, imágenes embebidas y estadísticas.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "filename": {"type": "string"},
+                        "file_path": {"type": "string"},
+                        "file_base64": {"type": "string"},
+                        "include_images_data": {"type": "boolean"},
+                        "max_images": {"type": "integer"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "pdf", "document", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_process_pdf_document(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_create_mercadopago_preference",
+                description="Crea una preferencia de pago de MercadoPago para un pedido confirmado en Odoo.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "cuit_dni": {"type": "string"},
+                    },
+                    "required": ["order_id", "cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "mercadopago", "payment", "write"],
+            ),
+            lambda args: odoo_tools.odoo_create_mercadopago_preference(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_get_invoice_status",
+                description="Consulta el estado de facturación y cobranza de un pedido en Odoo.",
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "connection": {"type": "string"},
+                        "db": {"type": "string"},
+                        "order_id": {"type": "integer"},
+                        "cuit_dni": {"type": "string"},
+                    },
+                    "required": ["order_id", "cuit_dni"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "invoice", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_get_invoice_status(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="odoo_get_restaurant_menu",
+                description=(
+                    "Devuelve la carta del restaurante como una URL de descarga pública DIRECTA "
+                    "(/web/content/<id>?access_token=...) que abre el PDF sin login. "
+                    "El PDF se cachea: la primera vez puede tardar, las siguientes son instantáneas. "
+                    "Usa SIEMPRE esta herramienta cuando pidan ver/mostrar/descargar la carta o el menú. "
+                    "Devuelve 'download_url' y 'download_link' (Markdown listo para enviar al usuario). "
+                    "Requiere 'tenant' (ej: 'resto')."
+                ),
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "tenant": {"type": "string", "description": "Nombre del tenant, ej: resto. Se usa como perfil de conexión, DB y para armar la URL https://{tenant}.contamela.com"},
+                        "include_pdf_base64": {"type": "boolean", "description": "Si true, descarga el PDF y lo devuelve en base64. Default false."},
+                        "force_refresh": {"type": "boolean", "description": "Si true, regenera el PDF aunque exista una versión cacheada. Úsalo solo si la carta cambió y la versión cacheada está desactualizada. Default false."},
+                    },
+                    "required": ["tenant"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["odoo", "restaurant", "menu", "pdf", "read-only"],
+            ),
+            lambda args: odoo_tools.odoo_get_restaurant_menu(load_config(), args),
         )
         self._registry.register(
             ToolDefinition(
@@ -659,20 +1095,174 @@ class RegistryService:
 
         self._registry.register(
             ToolDefinition(
-                name="catolico_leer_documento",
-                description="Lee el contenido de un documento del RAG en texto completo. Usa esta tool si el usuario solicita un resumen o leer el documento completo de un resultado previo de search_rag.",
+                name="catolico_listar_titulos",
+                description=(
+                    "Lista todos los títulos y nombres de archivo de documentos ingestados "
+                    "en el store católico del RAG. Lee el front-matter YAML de cada .md. "
+                    "Usar para validar si un documento existe antes de resumirlo, "
+                    "o para mostrar el catálogo de documentos disponibles al usuario."
+                ),
                 category=categories.SYSTEM,
                 input_schema={
                     "type": "object",
                     "properties": {
-                        "uri": {"type": "string", "description": "La URI o nombre del archivo markdown a leer"},
+                        "store": {
+                            "type": "string",
+                            "description": "Nombre del store RAG. Default: 'catolico'",
+                            "default": "catolico",
+                        }
                     },
-                    "required": ["uri"]
+                    "required": [],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["catolico", "rag", "titulos", "catalogo"],
+            ),
+            lambda args: catolico_tools.catolico_listar_titulos(load_config(), args),
+        )
+
+        self._registry.register(
+            ToolDefinition(
+                name="catolico_leer_documento",
+                description=(
+                    "Lee el contenido completo de un documento del RAG católico. "
+                    "Úsala si el usuario pide un resumen o leer un documento. "
+                    "Dos modos: (1) por 'uri' exacta que devolvió search_rag — resuelve automáticamente el path real; "
+                    "(2) por 'query' de búsqueda cuando no tenés URI o los resultados de search_rag fueron dudosos/múltiples — "
+                    "busca internamente y devuelve el mejor documento. "
+                    "Preferí el modo 'query' cuando la búsqueda devolvió más de 1 resultado o el título no coincide exactamente."
+                ),
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "uri": {
+                            "type": "string",
+                            "description": "URI exacta del documento (formato local://catolico/...) tal como la devuelve search_rag. Opcional si usás query."
+                        },
+                        "query": {
+                            "type": "string",
+                            "description": "Texto de búsqueda para encontrar el documento. Usar cuando no tenés URI exacta o los resultados previos fueron dudosos."
+                        },
+                        "store": {
+                            "type": "string",
+                            "description": "Nombre del store RAG. Default: 'catolico'",
+                            "default": "catolico"
+                        },
+                    },
+                    "required": []
                 },
                 visibility=visibility.PUBLIC,
                 tags=["catolico", "rag", "resumen"],
             ),
             lambda args: catolico_tools.catolico_leer_documento(load_config(), args),
+        )
+
+        self._registry.register(
+            ToolDefinition(
+                name="catolico_resumir_documento",
+                description=(
+                    "Genera un resumen estructurado de un documento católico usando SpineDigest. "
+                    "Pipeline de 3 etapas: chunking → grafo de conocimiento → defensa multi-agente. "
+                    "Cachea el resultado para evitar re-procesar. "
+                    "Usar cuando el usuario pide 'resumir', 'resumen de' o 'síntesis de' un documento."
+                ),
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Nombre o título del documento a resumir."
+                        },
+                        "store": {
+                            "type": "string",
+                            "description": "Nombre del store. Default: 'catolico'",
+                            "default": "catolico"
+                        },
+                        "prompt": {
+                            "type": "string",
+                            "description": "Instrucción de extracción para SpineDigest. Opcional."
+                        },
+                    },
+                    "required": ["query"]
+                },
+                visibility=visibility.PUBLIC,
+                tags=["catolico", "rag", "resumen", "spinedigest"],
+            ),
+            lambda args: catolico_tools.catolico_resumir_documento(load_config(), args),
+        )
+        # --- OCRL Mendoza: Planilla de Google (Tier 2) ---
+        self._registry.register(
+            ToolDefinition(
+                name="sheet_account_goes_to_sheet",
+                description=(
+                    "Indica si un codigo de cuenta OCRL debe resolverse en la "
+                    "planilla de Google (prefijo CL*). Usar ANTES de buscar en "
+                    "Odoo: si use_sheet=true, ir directo a sheet_lookup_partner."
+                ),
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {"account_code": {"type": "string"}},
+                    "required": ["account_code"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["ocrl", "sheet", "identity", "read-only"],
+            ),
+            lambda args: sheet_tools.sheet_account_goes_to_sheet(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="sheet_lookup_partner",
+                description=(
+                    "Busca un cliente OCRL en la planilla de Google por codigo "
+                    "de cuenta, CUIT o identidad de chat (channel wa/lid/tg + "
+                    "token). Fallback Tier 2: usar para cuentas CL* o cuando el "
+                    "cliente NO se encontro en Odoo. Devuelve price_adjustment y "
+                    "line_discount (=-price_adjustment)."
+                ),
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "account_code": {"type": "string"},
+                        "cuit": {"type": "string"},
+                        "channel": {"type": "string", "enum": ["wa", "lid", "tg"]},
+                        "token": {"type": "string"},
+                    },
+                },
+                visibility=visibility.PUBLIC,
+                tags=["ocrl", "sheet", "identity", "read-only"],
+            ),
+            lambda args: sheet_tools.sheet_lookup_partner(load_config(), args),
+        )
+        self._registry.register(
+            ToolDefinition(
+                name="sheet_register_partner",
+                description=(
+                    "Registra un cliente OCRL en la planilla de Google con "
+                    "cuenta + CUIT + identidad del canal informado (guarda SOLO "
+                    "el dato del canal: celular en telefono, lid en lid, username "
+                    "en telegram). Requiere credenciales de escritura."
+                ),
+                category=categories.SYSTEM,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "account_code": {"type": "string"},
+                        "cuit": {"type": "string"},
+                        "channel": {"type": "string", "enum": ["wa", "lid", "tg"]},
+                        "token": {"type": "string"},
+                        "name": {"type": "string"},
+                        "telegram_username": {"type": "string"},
+                        "price_adjustment": {"type": "number"},
+                    },
+                    "required": ["account_code", "cuit"],
+                },
+                visibility=visibility.PUBLIC,
+                tags=["ocrl", "sheet", "identity", "write"],
+            ),
+            lambda args: sheet_tools.sheet_register_partner(load_config(), args),
         )
 
     def list_tools(self):

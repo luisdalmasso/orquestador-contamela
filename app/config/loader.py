@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.config.models import AppConfig
+from app.utils.paths import resolve_runtime_path
 
 
 DEFAULT_CONFIG_PATH = "/contenedores/conti-backend/config/app_config.json"
@@ -16,13 +17,13 @@ ENV_CONFIG_PATH = "CONTI_BACKEND_CONFIG"
 def get_config_path() -> Path:
     configured_path = os.environ.get(ENV_CONFIG_PATH)
     if configured_path:
-        return Path(configured_path)
+        return resolve_runtime_path(configured_path)
 
-    container_path = Path(CONTAINER_CONFIG_PATH)
+    container_path = resolve_runtime_path(CONTAINER_CONFIG_PATH)
     if container_path.exists():
         return container_path
 
-    return Path(DEFAULT_CONFIG_PATH)
+    return resolve_runtime_path(DEFAULT_CONFIG_PATH)
 
 
 @lru_cache(maxsize=1)

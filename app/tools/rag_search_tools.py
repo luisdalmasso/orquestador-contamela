@@ -168,7 +168,7 @@ def search_rag_quick(config, args: dict) -> dict:
     payload = {
         "query": query,
         "store_name": store,
-        "search_mode": "keyword",
+        "search_mode": "hybrid",
         "top_k": int(args.get("top_k", 5)),
         "max_tokens": 1,  # minimiza uso de LLM
     }

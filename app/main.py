@@ -6,8 +6,10 @@ from fastapi.staticfiles import StaticFiles
 
 from app.chat.router import router as chat_router
 from app.config.loader import load_config, reload_config
+from app.integrations.mercadopago_router import router as mercadopago_router
 from app.llm_emulation.router import router as llm_router
 from app.mcp.router import router as mcp_router
+from app.openhands_agent.router import router as openhands_router
 from app.services.health_service import HealthService
 from app.services.onboarding_service import OnboardingService
 from app.services.rules_service import RulesService
@@ -25,6 +27,8 @@ app.include_router(web_router)
 app.include_router(mcp_router)
 app.include_router(llm_router)
 app.include_router(chat_router)
+app.include_router(mercadopago_router)
+app.include_router(openhands_router, prefix="/agent", tags=["agent"])
 
 
 @app.get("/health")
