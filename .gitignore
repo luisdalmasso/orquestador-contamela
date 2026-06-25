@@ -1,73 +1,132 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-.eggs/
+# ============ EXCLUIR: ARCHIVOS TEMPORALES/CACHE ============
 
-# Entornos virtuales
-.venv/
-venv/
-env/
+# Bases de datos SQLite (generadas automáticamente)
+*.db
+*.db-shm
+*.db-wal
 
-# Variables de entorno
-.env
-.env.*
-!.env.example
+# Archivos de lock
+*.lock
+*.pid
+
+# Cache de modelos y herramientas
+.cache/
+cache/
+.hermes_history
+.models_dev_cache.json
+.ollama_cloud_models_cache.json
+.response_store.db*
+.state.db*
+.kanban.db*
+
+# Archivos de sesión y pairing
+pairing/
+sessions/
+channel_directory.json
 
 # Logs
 *.log
-logs/
 
-# Datos voluminosos / runtime
-claw_data/
-conti_home/workspace/
-conti_home/hf_cache/
-conti_home/.nanobot/cache/
-nanobot/workspace/
+# Archivos de gateway
+gateway.*
+.kanban/
 
-# Repos embebidos (se manejan por separado)
-conti_home/.nanobot/workspace/
-conti_home/api-workspace/
-nanobot/
+# ============ EXCLUIR: ARCHIVOS DE DESARROLLO ============
 
-# Credenciales OAuth y secrets
-google-workspace/token.json
-conti_home/google-workspace/token.json
-conti_home/google-workspace/credentials.json
+# Configuraciones locales
+.bash_history
+.gitconfig
+npm-global/
 
-# SSH keys - NUNCA versionar
-conti_home/.ssh/id_rsa
-conti_home/.ssh/id_rsa2.ppk
-conti_home/.ssh/known_hosts
-conti_home/.ssh/known_hosts.old
+# Archivos de npm
+package-lock.json
 
-# Cache npm
-conti_home/.npm/
+# ============ EXCLUIR: ARCHIVOS LEGACY ============
 
-# Cache HuggingFace / modelos grandes
-conti_home/.cache/
-conti_home/.local/
-conti_home/.config/
-conti_home/.nanobot/
+# Archivos con sufijo legacy
+*.legacy-nanobot
+*copy*
+*copy.yml
 
-# Modelos / cache HuggingFace
-*.bin
-*.safetensors
-*.gguf
+# Archivos de backup
+*.bak
+*.old
+backup-*
 
-# IDE
-.vscode/
+# ============ INCLUIR: TODO LO DEMÁS ============
+# (Código, configuraciones, scripts, documentación)
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos de node
+node_modules/
+
+# Archivos de IDE
 .idea/
-*.swp
-*.swo
+.vscode/
 
-# macOS
-.DS_Store
+# Archivos de Hermès (configuraciones locales)
+app/hermes_profiles/contihome/
 
-# Docker build cache
-.dockerignore_cache
+# Archivos de conti_home que no son scripts Python
+conti_home/.hermes/
+conti_home/.npmrc
+conti_home/.npm-global/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Entorno virtual de Python
+.venv/
+venv/
+
+# Directorios duplicados o temporales
+c/
+
+# Planes y chats
+chats-plans/
+
+# Configuraciones locales de conti_home
+conti_home/.config/
+conti_home/.local/
+
+# Archivos binarios en conti_home
+conti_home/.npm-global/bin/
+
+# Archivos de Hermès Nanobot
+.nanobot/
+
+# Archivos de logging de Hermès
+hermes_logging_quiet.py
+
+# Claves SSH
+ssh/
+.id_rsa
+.id_rsa.pub
+
+# Archivos temporales de npm
+npm/
+
+# Sourcebot
+sourcebot/
+
+# Archivos con sufijo pre-nanobot-removal
+*pre-nanobot-removal
+
+# Cache de npm
+npm/_cacache/
+
+# Datos de NLTK (tokenizers)
+nltk_data/
+
+# Migration manifest
+migration_manifest/
+
+# Excluir todo conti_home excepto scripts Python
+conti_home/
+!conti_home/*.py
+!conti_home/sync_odoo_profiles.sh

@@ -1,0 +1,1081 @@
+{
+  "name": "Orquestador Chainlit",
+  "nodes": [
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ ($json.message || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "regex",
+              "value2": "=\\bobtener\\s+documento\\b"
+            },
+            {
+              "operation": "regex",
+              "value2": "=((lecturas?|evangelio|misa)\\s+(de(l)?|para)\\s+(el\\s+|la\\s+|este\\s+|esta\\s+|proximo\\s+)?(dia|hoy|manana|domingo|lunes|martes|miercoles|jueves|viernes|sabado|\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}))",
+              "output": 1
+            },
+            {
+              "operation": "regex",
+              "value2": "=\\b(resum[a-z]*|sintetiz[a-z]*|sintesis)\\b",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "195b39d1-ba33-4a5a-8660-28fdd7feece6",
+      "name": "Detectar Lecturas de Hoy",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -1888,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:9001/mcp/execute",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  const rawMessage = String($json.message || '').toLowerCase();\n  const normalizedMessage = rawMessage.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n  const weekdayMatch = normalizedMessage.match(/\\b(domingo|lunes|martes|miercoles|jueves|viernes|sabado)\\b/);\n  let fecha = 'hoy';\n\n  // Formato DD-MM-AAAA (viene del date picker)\n  const ddmmyyyyMatch = normalizedMessage.match(/\\b(\\d{1,2})-(\\d{1,2})-(\\d{4})\\b/);\n  // Formato YYYY-MM-DD\n  const isoMatch = normalizedMessage.match(/\\b(\\d{4})-(\\d{2})-(\\d{2})\\b/);\n\n  if (ddmmyyyyMatch) {\n    const [, d, m, y] = ddmmyyyyMatch;\n    fecha = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;\n  } else if (isoMatch) {\n    fecha = isoMatch[0];\n  } else if (/\\bpasado\\s+manana\\b/.test(normalizedMessage)) {\n    const targetDate = new Date();\n    targetDate.setHours(0, 0, 0, 0);\n    targetDate.setDate(targetDate.getDate() + 2);\n    fecha = targetDate.toISOString().slice(0, 10);\n  } else if (/\\bmanana\\b/.test(normalizedMessage)) {\n    const targetDate = new Date();\n    targetDate.setHours(0, 0, 0, 0);\n    targetDate.setDate(targetDate.getDate() + 1);\n    fecha = targetDate.toISOString().slice(0, 10);\n  } else if (weekdayMatch) {\n    const weekdayMap = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };\n    const today = new Date();\n    today.setHours(0, 0, 0, 0);\n    const currentDay = today.getDay();\n    const targetDay = weekdayMap[weekdayMatch[1]];\n    const dayOffset = (targetDay - currentDay + 7) % 7;\n    const targetDate = new Date(today);\n    targetDate.setDate(today.getDate() + dayOffset);\n    fecha = targetDate.toISOString().slice(0, 10);\n  }\n\n  return {\n    tool_name: 'catolico_lecturas_dia',\n    arguments: { fecha },\n  };\n})() }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "e25a7267-45d5-4fec-8eb5-f869a552b499",
+      "name": "Llamar MCP Lecturas del Día",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1600,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json.result ?? $json;\nconst source = payload?.data ?? {};\nconst tenantId = $('Estandarizar Variables').item.json.tenant_id || '';\nconst asText = (value) => typeof value === 'string' ? value.trim() : '';\nconst isUsefulText = (value) => {\n  const normalized = asText(value);\n  if (!normalized) return false;\n  return !/no encontrada\\.?$/i.test(normalized);\n};\nconst info = source.info_liturgica && typeof source.info_liturgica === 'object' ? source.info_liturgica : {};\nconst readingDefinitions = [\n  { key: 'primera_lectura', title: 'Primera lectura', variant: 'primera_lectura' },\n  { key: 'salmo', title: 'Salmo de hoy', variant: 'salmo' },\n  { key: 'segunda_lectura', title: 'Segunda lectura', variant: 'segunda_lectura' },\n  { key: 'evangelio', title: 'Evangelio del día', variant: 'evangelio' },\n  { key: 'reflexion', title: 'Reflexión del Evangelio de hoy', variant: 'reflexion' },\n];\nconst readingCards = readingDefinitions\n  .map((definition) => ({ ...definition, content: asText(source[definition.key]) }))\n  .filter((definition) => isUsefulText(definition.content));\nconst response = readingCards.map((card) => card.content).join('\\n\\n').trim() || asText(payload?.result) || asText(payload?.message) || 'No pude obtener las lecturas del día.';\nconst previewBase = readingCards[0]?.content || asText(source.evangelio) || response;\nconst collapsedPreview = previewBase.length > 160 ? `${previewBase.substring(0, 160).trim()}... *(ver panel lateral)*` : previewBase;\nconst uiElements = readingCards.map((card) => ({\n  type: 'reading_card',\n  title: card.title,\n  variant: card.variant,\n  content: card.content,\n}));\nif (info && (info.dia || info.celebracion || info.color || info.tiempo_liturgico)) {\n  uiElements.push({\n    type: 'liturgical_info',\n    title: 'Información litúrgica',\n    day: info.dia || '',\n    celebration: info.celebracion || '',\n    color: info.color || '',\n    liturgical_time: info.tiempo_liturgico || '',\n  });\n}\nreturn {\n  tenant_id: tenantId,\n  response: response,\n  texto: collapsedPreview,\n  ui_elements: uiElements,\n  source: 'mcp_catolico_lecturas',\n};"
+      },
+      "id": "5d92c008-82b6-4326-8f27-0a6bea655505",
+      "name": "Formatear Lecturas MCP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "dbee9502-c27f-4469-b180-a6bc9333330b",
+      "name": "Webhook Universal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2384,
+        896
+      ],
+      "webhookId": "e40790d4-efb9-420e-920f-2ca54bc5d9ff"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "channel",
+              "value": "={{ $json.body.channel || 'whatsapp' }}"
+            },
+            {
+              "name": "tenant_id",
+              "value": "={{ $json.body.tenant_id }}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{ $json.body.session_id }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ typeof $json.body.message === 'string' ? $json.body.message : Array.isArray($json.body.message) ? $json.body.message.map(m => m?.text || '').join(' ').trim() : '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1eaddf82-0e66-4fcd-a52b-47b1ea20d2b7",
+      "name": "Estandarizar Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2176,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"texto\": $json.texto,\n  \"ui_elements\": $json.ui_elements,\n  \"actions\": $json.actions\n} }}",
+        "options": {}
+      },
+      "id": "a49039c0-cfcd-4d7c-a090-13b095498f32",
+      "name": "Responder a Chainlit",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Analizador de Contenido v2 ──────────────────────────────────────────────\n// Prioridad: ui_elements prearmados > PDF/QR URLs > tipos de archivo > longitud de texto\n//\n// NUEVOS TIPOS SOPORTADOS (Mozo Virtual):\n//   pdf_url     → URL pública de download_report de Odoo — embeber en panel wide\n//   payment_qr  → URL de QR de Mercado Pago — mostrar imagen QR en panel wide\n\nconst response = $input.item.json.response || '';\nconst tenantId = $input.item.json.tenant_id || '';\nconst presetUiElements = Array.isArray($input.item.json.ui_elements) ? $input.item.json.ui_elements : [];\nconst presetText = typeof $input.item.json.texto === 'string' ? $input.item.json.texto.trim() : '';\n\nlet uiElements = presetUiElements;\nlet texto = presetText || response;\n\nif (!uiElements.length) {\n\n  // ── 1. Detectar URL pública de carta/menú PDF de Odoo (docs_chatui o web/content con access_token)\n  const pdfOdooMatch = response.match(\n    /(https?:\\/\\/[^\\s)\"']+\\/(?:docs_chatui\\/[^\\s)\"']+\\.pdf[^\\s)\"']*|web\\/content\\/\\d+[^\\s)\"']*access_token=[^\\s)\"']+))/i\n  );\n  if (pdfOdooMatch) {\n    const pdfUrl = pdfOdooMatch[1];\n    uiElements = [{ type: 'pdf_url', title: 'Carta del Restaurante', url: pdfUrl }];\n    texto = '¡Aquí está nuestra carta! Podés verla en el panel lateral 👉';\n  }\n\n  // ── 2. Detectar URL de imagen QR de Mercado Pago (report/barcode o qr_image_url)\n  else if (\n    response.match(/report\\/barcode[^\\s)\"']*type=QR/i) ||\n    response.match(/qr_image_url[^\\s)\"']*(https?:\\/\\/[^\\s)\"']+)/i)\n  ) {\n    const qrUrlMatch = response.match(/(https?:\\/\\/[^\\s)\"']+report\\/barcode[^\\s)\"']*type=QR[^\\s)\"']*)/i)\n      || response.match(/qr_image_url[\":\\s]+(https?:\\/\\/[^\\s,)\"']+)/i);\n    const amountMatch = response.match(/\\$?([\\d,]+\\.\\d{2})/);\n    const orderMatch = response.match(/\\b(\\d{6,})\\b/);\n    if (qrUrlMatch) {\n      uiElements = [{\n        type: 'payment_qr',\n        title: 'Pago con Mercado Pago',\n        qr_image_url: qrUrlMatch[1],\n        amount: amountMatch ? parseFloat(amountMatch[1].replace(',', '')) : undefined,\n        order_name: orderMatch ? orderMatch[1] : undefined,\n      }];\n      texto = response.replace(qrUrlMatch[0], '').trim().substring(0, 200) || '¡Escaneá el QR para pagar con Mercado Pago! 📱';\n    }\n  }\n\n  // ── 3. Detectar archivo PDF local\n  else {\n    const pdfMatch = response.match(/([/\\w\\-\\.]+\\.pdf[\\w\\-\\.]*)/i);\n    if (pdfMatch) {\n      const filePath = pdfMatch[1];\n      const name = filePath.split('/').pop().replace(/\\.pdf.*/i, '');\n      uiElements = [{ type: 'pdf', name: name, path: filePath }];\n      texto = response.replace(pdfMatch[0], '').trim();\n      if (!texto || texto.length < 40) texto = `**${name}** *(ver panel lateral)*`;\n    }\n\n    // ── 4. Contenido largo → sidebar\n    else if (response.length > 300) {\n      const mdMatch = response.match(/([\\w/\\-\\.]+\\.md[\\w\\-\\.]*)/i);\n      const htmlMatch = response.match(/([\\w/\\-\\.]+\\.html[\\w\\-\\.]*)/i);\n      let title = 'Respuesta';\n      if (mdMatch) {\n        title = mdMatch[1].split('/').pop().replace(/\\.md.*/i, '');\n      } else if (htmlMatch) {\n        title = htmlMatch[1].split('/').pop().replace(/\\.html.*/i, '');\n      }\n      uiElements = [{ type: 'sidebar', title: title, content: response }];\n      // Preview inteligente: cortar en el último salto de línea antes del límite\n      const limit = 200;\n      let preview = response.substring(0, limit);\n      const lastNewline = preview.lastIndexOf('\\n');\n      if (lastNewline > 80) preview = preview.substring(0, lastNewline);\n      texto = preview.replace(/[#*`]/g, '').trim() + '... *(ver panel lateral)*';\n    }\n\n    // ── 5. Imagen\n    else {\n      const imgMatch = response.match(/(https?:\\/\\/[^\\s]+\\.(?:jpg|jpeg|png|webp|gif))/i);\n      if (imgMatch) {\n        uiElements = [{ type: 'image', name: 'Imagen', url: imgMatch[1] }];\n      }\n    }\n  }\n\n} else if (!texto) {\n  // Hay ui_elements pero no texto: generar preview\n  const first = uiElements[0];\n  texto = first?.title || first?.name || 'Respuesta disponible en el panel lateral';\n  if (texto.length > 200) texto = texto.substring(0, 200) + '...';\n}\n\nreturn {\n  tenant_id: tenantId,\n  response: response,\n  texto: texto,\n  ui_elements: uiElements,\n  actions: $input.item.json.actions || [],\n};"
+      },
+      "id": "d9baa900-7428-4a9e-9ca1-4d2429efcff7",
+      "name": "Analizador de Contenido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1152,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.tenant_id }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "catolico"
+            },
+            {
+              "value2": "resto",
+              "output": 1
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      },
+      "id": "fa200203-5790-460b-9221-77750426770b",
+      "name": "Switch por Tenant",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "actions",
+              "value": "=[{ \"label\": \"📖 Lecturas de hoy\", \"value\": \"dame las lecturas de hoy completas y sin resumir\" }]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "385ba22e-65aa-4cec-865d-89f411bf7e87",
+      "name": "Acciones Católico",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "actions",
+              "value": "=[]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fbd08a94-1bf7-45ec-9153-0ce6b92d9d3f",
+      "name": "Acciones Resto",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "actions",
+              "value": "=[]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a5b600ff-0d5f-4b42-9da7-b4c66d3adb0c",
+      "name": "Acciones Default",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.tenant_id }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "catolico"
+            },
+            {
+              "value2": "resto",
+              "output": 1
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      },
+      "id": "3318db85-bb2c-4284-844d-29be7c524400",
+      "name": "Rutear por Tenant",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -2000,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:8766/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-hermes-cat"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"model\": \"kilo-auto/free\",\n  \"messages\": [{\"role\": \"user\", \"content\": $json.message || \"\"}],\n  \"stream\": false,\n  \"user\": $json.session_id\n} }}",
+        "options": {
+          "timeout": 360000
+        }
+      },
+      "id": "8476dc9c-1219-4195-8084-4175f04bb20e",
+      "name": "Llamar Hermes Católico",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1600,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:8767/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-hermes-resto"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Odoo-Database",
+              "value": "={{ $json.tenant_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"model\": \"kilo-auto/free\",\n  \"messages\": [{\"role\": \"user\", \"content\": $json.message || \"\"}],\n  \"stream\": false,\n  \"user\": $json.session_id,\n  \"metadata\": {\"tenant_id\": $json.tenant_id}\n} }}",
+        "options": {
+          "timeout": 360000
+        }
+      },
+      "id": "a46653ca-d9be-45ac-98d0-06518c697ef0",
+      "name": "Llamar Hermes Resto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1600,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:8642/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-hermes-conti"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"model\": \"hermes-agent\",\n  \"messages\": [{\"role\": \"user\", \"content\": $json.message || \"\"}],\n  \"stream\": false,\n  \"user\": $json.session_id\n} }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "df7b4dfc-ef2d-4f13-ab7a-613ec7e9968f",
+      "name": "Llamar Hermes Default",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1600,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\nconst tenantId = $('Estandarizar Variables').item.json.tenant_id || 'catolico';\nconst content = data?.choices?.[0]?.message?.content\n  || data?.content\n  || data?.result\n  || data?.message\n  || 'Sin respuesta del asistente.';\nreturn {\n  tenant_id: tenantId,\n  response: content,\n  texto: content.length > 160 ? content.substring(0, 160) + '... *(ver panel lateral)*' : content,\n  ui_elements: []\n};"
+      },
+      "id": "e2eec593-ce5a-45ca-9988-8405e30c934a",
+      "name": "Normalizar Hermes Católico",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Normalizar Hermes Resto v2 ───────────────────────────────────────────────\n// Extrae la respuesta de Hermes y detecta URLs especiales para construir\n// ui_elements correctos ANTES de llegar al Analizador de Contenido.\n//\n// Tipos detectados:\n//   pdf_url    → URL pública de download_report (docs_chatui/ o web/content/?access_token=)\n//   payment_qr → URL de imagen QR de Mercado Pago (report/barcode/?type=QR)\n\nconst data = $json;\nconst tenantId = $('Estandarizar Variables').item.json.tenant_id || 'resto';\nconst content = data?.choices?.[0]?.message?.content\n  || data?.content\n  || data?.result\n  || data?.message\n  || 'Sin respuesta del asistente.';\n\nlet uiElements = [];\nlet texto = content;\n\n// ── 1. Detectar URL pública PDF del menú (docs_chatui o web/content con access_token)\nconst pdfOdooMatch = content.match(\n  /(https?:\\/\\/[^\\s)\"'\\]]+\\/(?:docs_chatui\\/[^\\s)\"'\\]]+\\.pdf[^\\s)\"'\\]]*|web\\/content\\/\\d+[^\\s)\"'\\]]*access_token=[^\\s)\"'\\]]+))/i\n);\nif (pdfOdooMatch) {\n  const pdfUrl = pdfOdooMatch[1];\n  uiElements = [{ type: 'pdf_url', title: 'Carta del Restaurante', url: pdfUrl }];\n  // Texto: usar lo que dijo Hermes antes del link, o mensaje genérico\n  const beforeLink = content.substring(0, content.indexOf(pdfOdooMatch[0])).trim();\n  texto = (beforeLink && beforeLink.length > 10)\n    ? beforeLink + ' 👉'\n    : '¡Aquí está nuestra carta! Podés verla en el panel lateral 👉';\n}\n\n// ── 2. Detectar URL de imagen QR de Mercado Pago\nelse {\n  const qrUrlMatch = content.match(\n    /(https?:\\/\\/[^\\s)\"'\\]]+\\/report\\/barcode\\/[^\\s)\"'\\]]*type=QR[^\\s)\"'\\]]*)/i\n  ) || content.match(\n    /qr_image_url[\":\\s]+(https?:\\/\\/[^\\s,)\"'\\]]+)/i\n  );\n\n  if (qrUrlMatch) {\n    const qrImgUrl = qrUrlMatch[1] || qrUrlMatch[0];\n    // Extraer monto si viene en la respuesta (ej: $ 39.81 o ARS 39.81)\n    const amountMatch = content.match(/(?:ARS|\\$)\\s*([\\d.,]+)/);\n    // Extraer número de orden (6+ dígitos o formato 000XXX)\n    const orderMatch = content.match(/\\b(0{2,}\\d{3,}|\\d{6,})\\b/);\n    uiElements = [{\n      type: 'payment_qr',\n      title: 'Pago con Mercado Pago',\n      qr_image_url: qrImgUrl,\n      amount: amountMatch ? parseFloat(amountMatch[1].replace(',', '.')) : undefined,\n      order_name: orderMatch ? orderMatch[1] : undefined,\n    }];\n    // Texto: lo que dijo Hermes (sin la URL del QR)\n    texto = content.replace(qrImgUrl, '').trim();\n    if (!texto || texto.length < 10) texto = '¡Escaneá el QR para pagar con Mercado Pago! 📱';\n  }\n}\n\n// ── Preview de texto para el chat (si no hay ui_elements especiales)\nif (!uiElements.length) {\n  // Preview inteligente: cortar en el último salto de línea antes del límite\n  const limit = 200;\n  if (texto.length > limit) {\n    let preview = texto.substring(0, limit);\n    const lastNewline = preview.lastIndexOf('\\n');\n    if (lastNewline > 80) preview = preview.substring(0, lastNewline);\n    texto = preview.trim() + '... *(ver panel lateral)*';\n  }\n}\n\nreturn {\n  tenant_id: tenantId,\n  response: content,\n  texto: texto,\n  ui_elements: uiElements,\n};"
+      },
+      "id": "59aefac9-1a58-4a99-94c9-048467e45821",
+      "name": "Normalizar Hermes Resto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\nconst tenantId = $('Estandarizar Variables').item.json.tenant_id || 'default';\nconst content = data?.choices?.[0]?.message?.content\n  || data?.content\n  || data?.result\n  || data?.message\n  || 'Sin respuesta del asistente.';\nreturn {\n  tenant_id: tenantId,\n  response: content,\n  texto: content.length > 160 ? content.substring(0, 160) + '... *(ver panel lateral)*' : content,\n  ui_elements: []\n};"
+      },
+      "id": "76049bad-e152-4402-bd33-54d9ca441967",
+      "name": "Normalizar Hermes Default",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "Hola, soy el flujo de prueba. Escribe **'evangelio'**, **'opciones'** o **'francisco'** para ver la magia en la interfaz de Chainlit."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0140887f-ec5c-4fe4-82f5-569fa807740f",
+      "name": "Mensaje por Defecto",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2688,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "¡Claro! He encontrado información fascinante sobre **San Francisco de Asís**."
+            },
+            {
+              "name": "ui_elements",
+              "value": "={{ [{ \"type\": \"image\", \"name\": \"San Francisco\", \"url\": \"https://www.shutterstock.com/image-vector/st-francis-assisi-feast-day-600w-2621963777.jpg\" }, { \"type\": \"sidebar\", \"title\": \"Biografía de San Francisco\", \"content\": \"San Francisco de Asís fue un santo umbro, diácono y fundador de la Orden Franciscana.\\n\\nDestacó por su amor a la creación y su voto de pobreza extrema.\" }] }}"
+            },
+            {
+              "name": "actions",
+              "value": "={{ [{ \"label\": \"🎉 Ver festividad\", \"value\": \"¿Cuándo se celebra la fiesta de San Francisco?\" }, { \"label\": \"⛪ Oración de la Paz\", \"value\": \"Muéstrame la Oración de la Paz de San Francisco\" }] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8b7f8253-f74d-48cf-9f55-7f90d4503438",
+      "name": "Ejemplo 3: Combinado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2688,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "¿Qué te gustaría hacer ahora? Selecciona una opción:"
+            },
+            {
+              "name": "actions",
+              "value": "={{ [{ \"label\": \"📖 Leer el Salmo\", \"value\": \"Mostrar el salmo del día\" }, { \"label\": \"🙏 Pedir una Oración\", \"value\": \"Quiero pedir una intención de oración\" }] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0810b834-4234-4bf1-8fa2-59969ebecf47",
+      "name": "Ejemplo 2: Botones",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2480,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "Aquí tienes el evangelio de hoy. Puedes leerlo con comodidad en el panel lateral derecho 👉"
+            },
+            {
+              "name": "ui_elements",
+              "value": "={{ [{ \"type\": \"sidebar\", \"title\": \"Evangelio del Día\", \"content\": \"### Lectura del Santo Evangelio según San Mateo\\n\\nEn aquel tiempo, Jesús dijo a sus discípulos...\" }] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1bf2a661-2e4b-4363-91be-e8c7bf5d1085",
+      "name": "Ejemplo 1: Sidebar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2688,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "Aquí tienes el archivo PDF solicitado. Lo he abierto nativamente en el panel lateral."
+            },
+            {
+              "name": "ui_elements",
+              "value": "={{ [{ \"type\": \"pdf\", \"name\": \"Matrimonio Católico\", \"path\": \"/documentos_listos/catolico/catholic-descargar.php-f-jmi-matrimonio-pdf.pdf-aa69883fc1.pdf\" }] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3cb6ee3a-e98f-4cd0-98b1-562c5b12e030",
+      "name": "Mostrar PDF",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2480,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "Te comparto el documento Markdown generado por el sistema. Lo he cargado en la barra derecha."
+            },
+            {
+              "name": "ui_elements",
+              "value": "={{ [{ \"type\": \"markdown_file\", \"title\": \"Curas Bicentenario (MD)\", \"path\": \"/documentos_listos/catolico/curas-bicentenario.pdf-d278b4e6cc.md\" }] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "386a4b5b-b747-428b-b875-5af0ce0bc3ff",
+      "name": "Mostrar Markdown",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2336,
+        1552
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "Aquí está el formato HTML renderizado. Revisa la barra lateral."
+            },
+            {
+              "name": "ui_elements",
+              "value": "={{ [{ \"type\": \"html_file\", \"title\": \"Bendiciones Solemnes (HTML)\", \"path\": \"/documentos_listos/catolico/curas-bendiciones-solemnes-3436fd2d02.html\" }] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "56dbc287-af3a-46dc-87ab-867de123460c",
+      "name": "Mostrar HTML",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2496,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "VuSAqf5x7Ssli6xR",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/VuSAqf5x7Ssli6xR",
+          "cachedResultName": "Chat_prueba2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatInput": "={{ $json.message}}",
+            "messageid": "={{ $json.session_id}}",
+            "sessionId ": "={{ $json.session_id}}",
+            "prompt_dinamico": "=Eres un asistente teológico experto, servicial y amable. Tu nombre es 'Asistente Católico'. Tu fecha actual es {{$today.format('YYYY-MM-DD')}}.\n\nREGLAS ESTRICTAS:\n\nIDIOMA: Responde SIEMPRE y ÚNICAMENTE en español.\n\nHERRAMIENTAS DISPONIBLES:\n\nobtener_lecturas_diarias: Obtiene las lecturas y el Evangelio del día.\nbuscadordocumentos: Busca en una base de conocimiento teológico (Vaticano, Catecismo, encíclicas, doctrina, liturgia, oraciones, himnos, cánticos, etc.)\nREGLAS DE USO DE HERRAMIENTAS (CRÍTICO - LEER ATENTAMENTE):\n\nOBLIGATORIO: Siempre debes usar buscadordocumentos PRIMERO para responder CUALQUIER pregunta sobre temas católicos, incluyendo pero NO limitado a:\n\nDoctrina, dogma, teología, magisterio\nCatecismo, Biblia, encíclicas, documentos pontificios\nLiturgia, sacramentos, oraciones, misal\nHimnos, cánticos, salmos litúrgicos\nSantos, vida de la Iglesia, historia\nCualquier pregunta sobre fe católica\nExcepción: Solo usa obtener_lecturas_diarias en lugar de buscadordocumentos si el usuario pregunta EXPLÍCITAMENTE por \"lecturas del día\", \"evangelio de hoy\" o \"misa de hoy\".\n\nPROCESO OBLIGATORIO:\n\nSi el usuario pregunta sobre algo católico → SIEMPRE usa buscadordocumentos con la consulta del usuario.\nSi no encuentras resultados → Intenta con sinónimos o términos relacionados (ej: \"himnos\" → \"cánticos\", \"cantos\"; \"santo del día\" → \"santoral\", \"calendario litúrgico\").\nSi después de 2-3 búsquedas diferentes NO encuentras nada → Entonces responde: \"Lo siento, no he podido encontrar información sobre ese tema en mis documentos.\"\nNUNCA respondas sin usar herramientas si la pregunta es sobre temas católicos.\n\nREGLAS DE RESPUESTA:\n\nCASO A (Análisis y Doctrina): Si usas buscadordocumentos, DEBES sintetizar la información coherentemente. Si los resultados parecen irrelevantes (ej: texto en otro idioma), intenta otra búsqueda con palabras diferentes.\nCASO B (Lecturas del Día): Si usas obtener_lecturas_diarias, presenta las lecturas de forma clara y bien formateada."
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "chatInput",
+              "displayName": "chatInput",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "messageid",
+              "displayName": "messageid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sessionId ",
+              "displayName": "sessionId ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "prompt_dinamico",
+              "displayName": "prompt_dinamico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -1168,
+        752
+      ],
+      "id": "9eda1f28-dda3-4122-abe0-70b150a72f41",
+      "name": "Call Chat_catolico",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:9001/mcp/execute",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"tool_name\": \"catolico_listar_titulos\", \"arguments\": {\"store\": \"catolico\"}}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "86becc9a-25a5-47df-98bd-506fec318c6f",
+      "name": "MCP Listar Titulos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1616,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer nombre del documento buscado del mensaje original\nconst message = $('Estandarizar Variables').item.json.message || '';\nconst msgNorm = message.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n\n// Detectar qué quiso resumir el usuario (texto después de resumir/sintetizar/síntesis)\nconst resumeMatch = msgNorm.match(/\\b(?:resum[a-z]*|sintetiz[a-z]*|sintesis)\\s+(?:(?:el|la|los|las|del?|un|una)\\s+(?:documento\\s+)?)?(.+?)(?:\\s+(?:por\\s+favor|porfavor)|\\s*[.?!]*\\s*$)/i);\nconst docQuery = resumeMatch ? resumeMatch[1].trim() : msgNorm;\n\n// Leer la lista de documentos del nodo anterior\nconst raw = $json;\nlet result = raw;\n\n// Parsear respuesta MCP (puede venir envuelta en content[])\nif (Array.isArray(raw.content) && raw.content.length > 0) {\n  const textEntry = raw.content.find(e => e && e.type === 'text');\n  if (textEntry && textEntry.text) {\n    try { result = JSON.parse(textEntry.text); } catch(e) {}\n  }\n} else if (raw.result) {\n  result = raw.result;\n}\nif (result && result.content && Array.isArray(result.content)) {\n  const inner = result.content.find(e => e && e.type === 'text');\n  if (inner && inner.text) {\n    try { result = JSON.parse(inner.text); } catch(e) {}\n  }\n}\n\nconst documentos = (result && Array.isArray(result.documentos)) ? result.documentos\n  : (result && result.data && Array.isArray(result.data.documentos)) ? result.data.documentos\n  : [];\n\n// Función de similitud Jaccard sobre palabras\nfunction tokenize(str) {\n  return str.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n    .split(/\\W+/).filter(w => w.length > 2);\n}\nfunction jaccard(tokA, tokB) {\n  const setA = new Set(tokA);\n  const setB = new Set(tokB);\n  const inter = [...setA].filter(x => setB.has(x)).length;\n  const union = new Set([...setA, ...setB]).size;\n  return union === 0 ? 0 : inter / union;\n}\n\nconst queryTokens = tokenize(docQuery);\nconst queryNorm = docQuery.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n\nconst scored = documentos.map(doc => {\n  const title = String(doc.titulo || doc.title || doc.nombre || '');\n  const titleNorm = title.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n  const titleTokens = tokenize(titleNorm);\n  const jaccardScore = jaccard(queryTokens, titleTokens);\n  const containsScore = titleNorm.includes(queryNorm) ? 1 : queryNorm.split(' ').filter(w => w.length > 2 && titleNorm.includes(w)).length / Math.max(queryNorm.split(' ').length, 1);\n  return { titulo: title, score: jaccardScore * 0.6 + containsScore * 0.4 };\n}).sort((a, b) => b.score - a.score);\n\nconst best = scored[0];\nconst top4 = scored.slice(0, 4).map(s => s.titulo);\nconst tenantId = $('Estandarizar Variables').item.json.tenant_id || 'catolico';\n\nreturn {\n  tenant_id: tenantId,\n  titulo_buscado: docQuery,\n  titulo_encontrado: best ? best.titulo : null,\n  coincidencia_exacta: best ? best.score > 0.5 : false,\n  top4_similares: top4,\n  message: $('Estandarizar Variables').item.json.message || '',\n};"
+      },
+      "id": "51d8b293-da2f-4a29-9d2f-1307f614b3ec",
+      "name": "Validar Titulo Resumir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1472,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:9001/mcp/execute",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"tool_name\": \"catolico_resumir_documento\", \"arguments\": { \"query\": $json.titulo_encontrado || $json.titulo_buscado, \"store\": \"catolico\" } } }}",
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "id": "84b75fba-40e3-4b47-b6f0-b63f14f4d80f",
+      "name": "Llamar MCP Resumir",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1200,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json;\nlet result = raw;\n\n// Parsear respuesta MCP\nif (Array.isArray(raw.content) && raw.content.length > 0) {\n  const textEntry = raw.content.find(e => e && e.type === 'text');\n  if (textEntry && textEntry.text) {\n    try { result = JSON.parse(textEntry.text); } catch(e) {}\n  }\n} else if (raw.result) {\n  result = typeof raw.result === 'string' ? (() => { try { return JSON.parse(raw.result); } catch(e) { return { content: raw.result }; } })() : raw.result;\n}\nif (result && result.content && Array.isArray(result.content)) {\n  const inner = result.content.find(e => e && e.type === 'text');\n  if (inner && inner.text) {\n    try { result = JSON.parse(inner.text); } catch(e) {}\n  }\n}\n\nconst validacion = $('Validar Titulo Resumir').item.json;\nconst tenantId = validacion.tenant_id || 'catolico';\nconst content = (result && (result.content || result.contenido || result.texto || result.summary || '')).toString().trim()\n  || (raw.content || '').toString().trim();\nconst titulo = (result && result.titulo) || validacion.titulo_encontrado || validacion.titulo_buscado || 'Documento';\n\nif (!content || content.length < 20) {\n  const errMsg = (result && result.error) || 'No pude generar el resumen del documento.';\n  return [{json:{\n    tenant_id: tenantId,\n    texto: '❌ ' + errMsg,\n    response: errMsg,\n    ui_elements: [],\n    source: 'mcp_catolico_resumir'\n  }}];\n}\n\n// Construir advertencia si no hubo coincidencia exacta\nlet advertencia = '';\nif (!validacion.coincidencia_exacta) {\n  const top4List = (validacion.top4_similares || []).map(t => `  • ${t}`).join('\\n');\n  advertencia = `\\n\\n---\\n⚠️ **Nota:** Pediste resumir _\"${validacion.titulo_buscado}\"_ pero no encontré ese título exacto en el catálogo. Se resumió el documento más similar: **\"${titulo}\"**.\\n\\n📋 Los 4 títulos más similares disponibles son:\\n${top4List}`;\n}\n\nconst previewSuffix = validacion.coincidencia_exacta ? '' : ' _(documento más similar)_';\nconst preview = `📄 Resumen de **\"${titulo}\"**${previewSuffix} listo en el panel lateral 👉`;\nconst uiElements = [{ type: 'sidebar', title: titulo, content: content + advertencia }];\n\nreturn [{ json: {\n  tenant_id: tenantId,\n  texto: preview,\n  response: content,\n  ui_elements: uiElements,\n  source: 'mcp_catolico_resumir'\n}}];"
+      },
+      "id": "85582729-ac5b-4b71-b012-cfa21956b709",
+      "name": "Formatear Resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1056,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://conti-backend:9001/mcp/execute",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const msg = String($json.message || \"\").trim(); const match = msg.match(/obtener\\s+documento\\s+(.+)/i); const docName = match ? match[1].trim() : msg; return { tool_name: \"catolico_leer_documento\", arguments: { query: docName, store: \"catolico\", use_index: true } }; })() }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "139f8a30-8798-4d86-833b-bb909eb08323",
+      "name": "Llamar MCP Leer Documento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1600,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json.result ?? $json;\nconst source = payload?.data ?? payload ?? {};\nconst tenantId = $(\"Estandarizar Variables\").item.json.tenant_id || \"\";\nconst originalMsg = $(\"Estandarizar Variables\").item.json.message || \"\";\nconst asText = (v) => typeof v === \"string\" ? v.trim() : \"\";\nconst content = asText(source.content) || asText(source.contenido) || asText(source.texto) || asText(payload?.content) || asText(payload?.result) || asText(payload?.message) || \"\";\nconst msgMatch = originalMsg.match(/obtener\\\\s+documento\\\\s+(.+)/i);\nconst title = asText(source.titulo) || asText(source.nombre) || (msgMatch ? msgMatch[1].trim() : \"\") || asText(source.filename) || \"Documento\";\n\nif (!content) {\n  return { tenant_id: tenantId, texto: \"No pude obtener el documento solicitado.\", response: \"\", ui_elements: [], source: \"mcp_catolico_leer_documento\" };\n}\n\nconst preview = title + \" — documento cargado en el panel lateral 👉\";\nconst uiElements = [{ type: \"sidebar\", title: title, content: content }];\n\nreturn { tenant_id: tenantId, texto: preview, response: content, ui_elements: uiElements, source: \"mcp_catolico_leer_documento\" };"
+      },
+      "id": "4dfd0c43-2228-40ae-a34c-4822eff6791c",
+      "name": "Formatear Documento MCP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        560
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Universal": {
+      "main": [
+        [
+          {
+            "node": "Estandarizar Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estandarizar Variables": {
+      "main": [
+        [
+          {
+            "node": "Rutear por Tenant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Lecturas de Hoy": {
+      "main": [
+        [
+          {
+            "node": "Llamar MCP Leer Documento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Llamar MCP Lecturas del Día",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Llamar Hermes Católico",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Llamar Hermes Católico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Listar Titulos": {
+      "main": [
+        [
+          {
+            "node": "Validar Titulo Resumir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Titulo Resumir": {
+      "main": [
+        [
+          {
+            "node": "Llamar Hermes Católico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar MCP Resumir": {
+      "main": [
+        [
+          {
+            "node": "Formatear Resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Resumen": {
+      "main": [
+        [
+          {
+            "node": "Analizador de Contenido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rutear por Tenant": {
+      "main": [
+        [
+          {
+            "node": "Detectar Lecturas de Hoy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Llamar Hermes Resto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Llamar Hermes Default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Hermes Católico": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Hermes Católico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Hermes Resto": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Hermes Resto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Hermes Default": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Hermes Default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Hermes Católico": {
+      "main": [
+        [
+          {
+            "node": "Analizador de Contenido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Hermes Resto": {
+      "main": [
+        [
+          {
+            "node": "Analizador de Contenido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Hermes Default": {
+      "main": [
+        [
+          {
+            "node": "Analizador de Contenido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar MCP Lecturas del Día": {
+      "main": [
+        [
+          {
+            "node": "Formatear Lecturas MCP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Lecturas MCP": {
+      "main": [
+        [
+          {
+            "node": "Analizador de Contenido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizador de Contenido": {
+      "main": [
+        [
+          {
+            "node": "Switch por Tenant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch por Tenant": {
+      "main": [
+        [
+          {
+            "node": "Acciones Católico",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Acciones Resto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Acciones Default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acciones Católico": {
+      "main": [
+        [
+          {
+            "node": "Responder a Chainlit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acciones Resto": {
+      "main": [
+        [
+          {
+            "node": "Responder a Chainlit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acciones Default": {
+      "main": [
+        [
+          {
+            "node": "Responder a Chainlit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar MCP Leer Documento": {
+      "main": [
+        [
+          {
+            "node": "Formatear Documento MCP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Documento MCP": {
+      "main": [
+        [
+          {
+            "node": "Analizador de Contenido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "29842c48-d227-4f12-bdbe-65fbe621671e",
+  "meta": {
+    "instanceId": "591d130969aadbcaf3337e28be8be9682d6d0e69e8cac16f20a8853f5778dcaa"
+  },
+  "id": "rB9dA8MGGE7bQTpf",
+  "tags": []
+}
