@@ -1,0 +1,45 @@
+---
+trace_id: tr-14efcbcbd9c5
+timestamp: "2026-07-01T15:24:58-0300"
+circuit: libre
+model: ""
+status: timeout
+duration_ms: 0
+tokens_used:
+  input: 0
+  output: 0
+  total: 0
+tool_calls_count: 0
+errors_count: 1
+errors:
+  - Request timed out
+---
+
+# 🔍 Traza Ponytail: `tr-14efcbcbd9c5`
+
+Modo: `LIBRE` | Estado: 🟡 **TIMEOUT** | Fecha: `2026-07-01T15:24:58-0300`
+
+## 🗺️ Flujo de Ejecución
+
+Este diagrama se renderiza automáticamente en GitHub:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    Client->>Router: POST /v1/chat/completions (circuit: libre)
+    Router->>Ponytail: enter context
+    Note over Router,Ponytail: no sourcebot pre-context
+    Ponytail->>Omp: append_system_prompt + user_task
+    Omp-->>Ponytail: turn_start
+    Omp-->>Ponytail: agent_end (text)
+    Ponytail->>Backend: mcp_record_trace
+    Backend->>Backend: write .ponytail/traces/<id>.md
+    Backend->>Backend: git add + commit (async)
+    Ponytail-->>Client: OpenAI response
+```
+
+## 💬 Mensajes
+
+## ❌ Errors
+
+1. `Request timed out`
