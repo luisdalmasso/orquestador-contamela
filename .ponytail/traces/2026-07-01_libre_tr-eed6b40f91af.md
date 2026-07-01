@@ -1,0 +1,39 @@
+---
+trace_id: tr-eed6b40f91af
+timestamp: "2026-07-01T15:24:57-0300"
+circuit: libre
+model: ""
+status: success
+duration_ms: 0
+tokens_used:
+  input: 100
+  output: 50
+  total: 150
+tool_calls_count: 0
+errors_count: 0
+---
+
+# 🔍 Traza Ponytail: `tr-eed6b40f91af`
+
+Modo: `LIBRE` | Estado: 🟢 **SUCCESS** | Fecha: `2026-07-01T15:24:57-0300`
+
+## 🗺️ Flujo de Ejecución
+
+Este diagrama se renderiza automáticamente en GitHub:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    Client->>Router: POST /v1/chat/completions (circuit: libre)
+    Router->>Ponytail: enter context
+    Note over Router,Ponytail: no sourcebot pre-context
+    Ponytail->>Omp: append_system_prompt + user_task
+    Omp-->>Ponytail: turn_start
+    Omp-->>Ponytail: agent_end (text)
+    Ponytail->>Backend: mcp_record_trace
+    Backend->>Backend: write .ponytail/traces/<id>.md
+    Backend->>Backend: git add + commit (async)
+    Ponytail-->>Client: OpenAI response
+```
+
+## 💬 Mensajes
