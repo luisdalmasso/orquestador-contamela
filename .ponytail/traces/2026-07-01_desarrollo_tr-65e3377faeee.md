@@ -1,0 +1,45 @@
+---
+trace_id: tr-65e3377faeee
+timestamp: "2026-07-01T13:09:20-0300"
+circuit: desarrollo
+model: ""
+status: error
+duration_ms: 0
+tokens_used:
+  input: 0
+  output: 0
+  total: 0
+tool_calls_count: 0
+errors_count: 1
+errors:
+  - Custom failure
+---
+
+# 🔍 Traza Ponytail: `tr-65e3377faeee`
+
+Modo: `DESARROLLO` | Estado: 🔴 **ERROR** | Fecha: `2026-07-01T13:09:20-0300`
+
+## 🗺️ Flujo de Ejecución
+
+Este diagrama se renderiza automáticamente en GitHub:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    Client->>Router: POST /v1/chat/completions (circuit: desarrollo)
+    Router->>Ponytail: enter context
+    Note over Router,Ponytail: no sourcebot pre-context
+    Ponytail->>Omp: append_system_prompt + user_task
+    Omp-->>Ponytail: turn_start
+    Omp-->>Ponytail: agent_end (text)
+    Ponytail->>Backend: mcp_record_trace
+    Backend->>Backend: write .ponytail/traces/<id>.md
+    Backend->>Backend: git add + commit (async)
+    Ponytail-->>Client: OpenAI response
+```
+
+## 💬 Mensajes
+
+## ❌ Errors
+
+1. `Custom failure`
