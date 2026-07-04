@@ -16,11 +16,13 @@ class LocalGitOps:
         remote: str = "origin",
         develop_branch: str = "develop",
         main_branch: str = "main",
+        target_branch: str | None = None,
     ) -> None:
         self.repo_path = Path(repo_path)
         self.remote = remote
         self.develop_branch = develop_branch
         self.main_branch = main_branch
+        self.target_branch = target_branch or develop_branch
 
     def _run_git(self, *args: str) -> dict[str, Any]:
         if not self.repo_path.exists() or not self.repo_path.is_dir():
@@ -48,7 +50,10 @@ class LocalGitOps:
     def get_status(self) -> dict[str, Any]:
         result = self._run_git("status", "--porcelain=v2", "--branch")
         if not result["success"]:
-            return {"available": False, "error": result.get("error") or result.get("stderr", "")}
+            return {
+                "available": False,
+                "error": result.get("error") or result.get("stderr", ""),
+            }
 
         lines = [line for line in result["stdout"].splitlines() if line]
         branch = "unknown"
@@ -99,7 +104,10 @@ class LocalGitOps:
     def get_log(self, limit: int = 10) -> dict[str, Any]:
         result = self._run_git("log", f"-{limit}", "--pretty=format:%H|%an|%ae|%ai|%s")
         if not result["success"]:
-            return {"available": False, "error": result.get("error") or result.get("stderr", "")}
+            return {
+                "available": False,
+                "error": result.get("error") or result.get("stderr", ""),
+            }
 
         commits = []
         for line in result["stdout"].splitlines():
@@ -161,7 +169,9 @@ class LocalGitOps:
             "diff_stat_vs_develop": diff.get("stat", ""),
             "ahead_vs_develop": diff.get("ahead_vs_develop", 0),
             "behind_vs_develop": diff.get("behind_vs_develop", 0),
-            "remotes": remotes.get("stdout", "").splitlines() if remotes.get("success") else [],
+            "remotes": remotes.get("stdout", "").splitlines()
+            if remotes.get("success")
+            else [],
             "next_actions": [
                 "Revisar diff con develop antes de salvar.",
                 "Usar run_salvar para commitear cuando la fase mutativa esté habilitada.",
@@ -169,7 +179,13 @@ class LocalGitOps:
             ],
         }
 
-    def run_salvar(self, confirm: bool = False, summary: str = "") -> dict[str, Any]:
+    def run_salvar(
+        self,
+        confirm: bool = False,
+        summary: str = "",
+        force_branch: str | None = None,
+    ) -> dict[str, Any]:
+        expected_branch = force_branch or self.target_branch
         status = self.get_status()
         if not status.get("available", False):
             return {"success": False, "error": status.get("error", "Git no disponible")}
@@ -178,24 +194,30 @@ class LocalGitOps:
         preview = {
             "success": False,
             "requires_confirmation": True,
-            "action": "commit+push a develop",
+            "action": f"commit+push a {expected_branch}",
             "repo_path": str(self.repo_path),
             "branch": status.get("branch"),
+            "target_branch": expected_branch,
             "commit_message": commit_message,
             "git_status": status,
             "diff_stat": self._run_git("diff", "--stat", "HEAD").get("stdout", ""),
-            "working_tree_preview": self._run_git("status", "--short").get("stdout", ""),
+            "working_tree_preview": self._run_git("status", "--short").get(
+                "stdout", ""
+            ),
         }
 
         if not confirm:
-            preview["message"] = "Preview generado. Ejecutar run_salvar(confirm=true) para aplicar el commit."
+            preview["message"] = (
+                "Preview generado. Ejecutar run_salvar(confirm=true) para aplicar el commit."
+            )
             return preview
 
-        if status.get("branch") != self.develop_branch:
+        if status.get("branch") != expected_branch:
             return {
                 "success": False,
-                "error": f"run_salvar requiere estar en la rama {self.develop_branch}",
+                "error": f"run_salvar requiere estar en la rama {expected_branch}",
                 "branch": status.get("branch"),
+                "target_branch": expected_branch,
             }
 
         if status.get("is_clean"):
@@ -209,34 +231,46 @@ class LocalGitOps:
 
         add_result = self._run_git("add", "-A")
         if not add_result["success"]:
-            return {"success": False, "error": add_result.get("stderr") or add_result.get("error")}
+            return {
+                "success": False,
+                "error": add_result.get("stderr") or add_result.get("error"),
+            }
 
         commit_result = self._run_git("commit", "-m", commit_message)
         if not commit_result["success"]:
             return {
                 "success": False,
-                "error": commit_result.get("stderr") or commit_result.get("error") or "Commit falló",
+                "error": commit_result.get("stderr")
+                or commit_result.get("error")
+                or "Commit falló",
                 "commit_message": commit_message,
             }
 
-        push_result = self._run_git("push", self.remote, self.develop_branch)
+        push_result = self._run_git("push", self.remote, expected_branch)
         if not push_result["success"]:
             return {
                 "success": False,
-                "error": push_result.get("stderr") or push_result.get("error") or "Push falló",
+                "error": push_result.get("stderr")
+                or push_result.get("error")
+                or "Push falló",
                 "commit_message": commit_message,
             }
 
         head_result = self._run_git("rev-parse", "HEAD")
+        next_step = (
+            "Usar run_promover(confirm=false) para revisar la promoción a main."
+            if expected_branch == self.develop_branch
+            else f"Commit pusheado a {expected_branch}. No hay flujo de promoción desde {expected_branch}."
+        )
         return {
             "success": True,
             "action": "salvar",
-            "branch": self.develop_branch,
+            "branch": expected_branch,
             "commit_message": commit_message,
             "commit_hash": head_result.get("stdout", "")[:8],
             "git_pushed": True,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "next_step": "Usar run_promover(confirm=false) para revisar la promoción a main.",
+            "next_step": next_step,
         }
 
     def run_promover(self, confirm: bool = False, summary: str = "") -> dict[str, Any]:
@@ -264,7 +298,10 @@ class LocalGitOps:
         }
 
         if not confirm:
-            preview["message"] = "Preview generado. Ejecutar run_promover(confirm=true, summary='...') para aplicar la promoción."
+            preview["message"] = (
+                "Preview generado. Ejecutar run_promover(confirm=true, summary='...') "
+                "para aplicar la promoción."
+            )
             return preview
 
         if current_branch != self.develop_branch:
@@ -291,13 +328,17 @@ class LocalGitOps:
             self._run_git("checkout", original_branch)
             return pull_main
 
-        merge_result = self._run_git("merge", "--no-ff", self.develop_branch, "-m", merge_message)
+        merge_result = self._run_git(
+            "merge", "--no-ff", self.develop_branch, "-m", merge_message
+        )
         if not merge_result["success"]:
             self._run_git("merge", "--abort")
             self._run_git("checkout", original_branch)
             return {
                 "success": False,
-                "error": merge_result.get("stderr") or merge_result.get("error") or "Merge falló",
+                "error": merge_result.get("stderr")
+                or merge_result.get("error")
+                or "Merge falló",
                 "merge_message": merge_message,
             }
 
@@ -306,7 +347,9 @@ class LocalGitOps:
         if not push_result["success"]:
             return {
                 "success": False,
-                "error": push_result.get("stderr") or push_result.get("error") or "Push a main falló",
+                "error": push_result.get("stderr")
+                or push_result.get("error")
+                or "Push a main falló",
                 "merge_message": merge_message,
             }
 
@@ -321,6 +364,191 @@ class LocalGitOps:
             "git_pushed": True,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "next_step": "Si corresponde, ejecutar despliegue manual fuera del backend.",
+        }
+
+    def run_hotfix_sync(
+        self,
+        confirm: bool = False,
+        summary: str = "",
+        compose_repo_path: str | None = None,
+        desarrollo_repo_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Sincroniza main → develop tras un hotfix commiteado en /compose.
+
+        Por default opera sobre /compose (origen del hotfix) y /desarrollo
+        (destino del sync). Construye dos LocalGitOps con target_branch
+        adecuado a cada working tree y orquesta el flujo.
+
+        Pre-condiciones:
+        - /compose está en main con commits nuevos (adelantado de origin/main)
+        - /desarrollo está limpio en develop
+
+        Pasos:
+        1) git push origin main  (en /compose)
+        2) git fetch origin       (en /desarrollo)
+        3) git merge --no-ff origin/main -m "hotfix: ..." (en /desarrollo)
+        4) git push origin develop (en /desarrollo)
+
+        Si falla cualquier paso, devuelve error sin completar pasos siguientes.
+        """
+        compose_path = compose_repo_path or str(Path(self.repo_path).parent / "compose")
+        desarrollo_path = desarrollo_repo_path or str(
+            Path(self.repo_path).parent / "desarrollo"
+        )
+
+        compose_ops = LocalGitOps(
+            repo_path=compose_path,
+            remote=self.remote,
+            develop_branch=self.develop_branch,
+            main_branch=self.main_branch,
+            target_branch=self.main_branch,
+        )
+        desarrollo_ops = LocalGitOps(
+            repo_path=desarrollo_path,
+            remote=self.remote,
+            develop_branch=self.develop_branch,
+            main_branch=self.main_branch,
+            target_branch=self.develop_branch,
+        )
+
+        compose_status = compose_ops.get_status()
+        desarrollo_status = desarrollo_ops.get_status()
+
+        if not compose_status.get("available", False):
+            return {
+                "success": False,
+                "error": f"/compose no disponible: {compose_status.get('error', '?')}",
+            }
+        if not desarrollo_status.get("available", False):
+            return {
+                "success": False,
+                "error": f"/desarrollo no disponible: {desarrollo_status.get('error', '?')}",
+            }
+
+        ahead_main = compose_status.get("ahead", 0)
+        merge_message = (
+            f"hotfix: {self._sanitize_summary(summary) or 'sync main → develop'}"
+        )
+
+        preview = {
+            "success": False,
+            "requires_confirmation": True,
+            "action": "hotfix_sync main -> develop",
+            "compose_branch": compose_status.get("branch"),
+            "compose_ahead_of_origin_main": ahead_main,
+            "develop_branch": desarrollo_status.get("branch"),
+            "develop_is_clean": desarrollo_status.get("is_clean", False),
+            "merge_message": merge_message,
+            "step_1_preview": {
+                "cmd": f"cd {compose_path} && git push {self.remote} {self.main_branch}",
+                "would_push_commits": ahead_main,
+            },
+        }
+
+        if not confirm:
+            preview["message"] = (
+                "Preview generado. Ejecutar run_hotfix_sync(confirm=true) "
+                "para aplicar el sync."
+            )
+            return preview
+
+        if compose_status.get("branch") != self.main_branch:
+            return {
+                "success": False,
+                "error": (
+                    f"run_hotfix_sync requiere /compose en {self.main_branch}, "
+                    f"está en {compose_status.get('branch')}"
+                ),
+                "compose_branch": compose_status.get("branch"),
+            }
+
+        if not compose_status.get("is_clean", False):
+            return {
+                "success": False,
+                "error": (
+                    "/compose tiene cambios uncommitted. Commiteá o stasheá "
+                    "antes de run_hotfix_sync."
+                ),
+                "compose_status": compose_status,
+            }
+
+        if desarrollo_status.get("branch") != self.develop_branch:
+            return {
+                "success": False,
+                "error": (
+                    f"run_hotfix_sync requiere /desarrollo en {self.develop_branch}, "
+                    f"está en {desarrollo_status.get('branch')}"
+                ),
+                "develop_branch": desarrollo_status.get("branch"),
+            }
+
+        if not desarrollo_status.get("is_clean", False):
+            return {
+                "success": False,
+                "error": (
+                    "/desarrollo tiene cambios uncommitted. Commiteá o stasheá "
+                    "antes de run_hotfix_sync."
+                ),
+                "develop_status": desarrollo_status,
+            }
+
+        # Step 1: push main en /compose
+        r1 = compose_ops._run_git("push", self.remote, self.main_branch)
+        if not r1["success"]:
+            return {
+                "success": False,
+                "step": "compose_push_main",
+                "error": r1.get("stderr") or r1.get("error") or "Push a main falló",
+            }
+
+        # Step 2: fetch origin en /desarrollo
+        r2 = desarrollo_ops._run_git("fetch", self.remote)
+        if not r2["success"]:
+            return {
+                "success": False,
+                "step": "develop_fetch",
+                "error": r2.get("stderr") or r2.get("error") or "Fetch falló",
+            }
+
+        # Step 3: merge origin/main en /desarrollo (--no-ff para preservar historial)
+        r3 = desarrollo_ops._run_git(
+            "merge", "--no-ff", f"origin/{self.main_branch}", "-m", merge_message
+        )
+        if not r3["success"]:
+            desarrollo_ops._run_git("merge", "--abort")
+            return {
+                "success": False,
+                "step": "develop_merge",
+                "error": r3.get("stderr") or r3.get("error") or "Merge falló",
+                "merge_message": merge_message,
+                "note": "Merge abortado automáticamente. /desarrollo queda como estaba.",
+            }
+
+        # Step 4: push develop en /desarrollo
+        r4 = desarrollo_ops._run_git("push", self.remote, self.develop_branch)
+        if not r4["success"]:
+            return {
+                "success": False,
+                "step": "develop_push",
+                "error": r4.get("stderr") or r4.get("error") or "Push a develop falló",
+                "merge_message": merge_message,
+                "note": "Merge local OK pero push falló. Reintentar push manual.",
+            }
+
+        develop_head = desarrollo_ops._run_git("rev-parse", self.develop_branch)
+        return {
+            "success": True,
+            "action": "hotfix_sync",
+            "compose_commit_count": ahead_main,
+            "develop_merge_message": merge_message,
+            "develop_head": develop_head.get("stdout", "")[:8],
+            "git_pushed": True,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "next_step": (
+                "/desarrollo tiene los commits de main. /compose sigue en main. "
+                "Si vas a promover develop→main vía run_promover, ahora los commits "
+                "estarán duplicados; usá git pull --ff-only o noop."
+            ),
         }
 
     def _resolve_compare_target(self) -> str:
@@ -358,7 +586,9 @@ class LocalGitOps:
         return f"merge: promoción {datetime.now(timezone.utc).strftime('%Y-%m-%d')} — {clean_summary}"
 
     def _sanitize_summary(self, summary: str) -> str:
-        allowed = [char for char in summary[:120] if char.isalnum() or char in " _-.,;:()/"]
+        allowed = [
+            char for char in summary[:120] if char.isalnum() or char in " _-.,;:()/"
+        ]
         return "".join(allowed).strip()
 
     def _checkout_main_branch(self) -> dict[str, Any]:
@@ -367,7 +597,9 @@ class LocalGitOps:
         if self._ref_exists(local_main):
             return self._run_git("checkout", self.main_branch)
         if self._ref_exists(remote_main):
-            return self._run_git("checkout", "-B", self.main_branch, f"{self.remote}/{self.main_branch}")
+            return self._run_git(
+                "checkout", "-B", self.main_branch, f"{self.remote}/{self.main_branch}"
+            )
         return self._run_git("checkout", "-B", self.main_branch, self.develop_branch)
 
     def _pull_main_if_available(self) -> dict[str, Any]:
@@ -387,6 +619,7 @@ def _git_ops(config: AppConfig, arguments: dict) -> LocalGitOps:
         remote=arguments.get("remote", "origin"),
         develop_branch=arguments.get("develop_branch", "develop"),
         main_branch=arguments.get("main_branch", "main"),
+        target_branch=arguments.get("target_branch"),
     )
 
 
@@ -411,6 +644,7 @@ def run_salvar(config: AppConfig, arguments: dict) -> dict[str, Any]:
     return _git_ops(config, arguments).run_salvar(
         confirm=bool(arguments.get("confirm", False)),
         summary=str(arguments.get("summary", "")),
+        force_branch=arguments.get("force_branch"),
     )
 
 
@@ -418,4 +652,20 @@ def run_promover(config: AppConfig, arguments: dict) -> dict[str, Any]:
     return _git_ops(config, arguments).run_promover(
         confirm=bool(arguments.get("confirm", False)),
         summary=str(arguments.get("summary", "")),
+    )
+
+
+def run_hotfix_sync(config: AppConfig, arguments: dict) -> dict[str, Any]:
+    """Sincroniza hotfix main→develop.
+
+    Requiere que /compose esté commiteado en main y /desarrollo limpio en develop.
+    Para configurar paths alternativos pasar `compose_repo_path` y/o
+    `desarrollo_repo_path` en arguments.
+    """
+    ops = _git_ops(config, arguments)
+    return ops.run_hotfix_sync(
+        confirm=bool(arguments.get("confirm", False)),
+        summary=str(arguments.get("summary", "")),
+        compose_repo_path=arguments.get("compose_repo_path"),
+        desarrollo_repo_path=arguments.get("desarrollo_repo_path"),
     )

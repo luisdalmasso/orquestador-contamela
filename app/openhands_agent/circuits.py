@@ -1,34 +1,46 @@
 # app/openhands_agent/circuits.py
 """
-Los 4 circuitos del agente Conti (OpenHands).
+Los 4 circuitos del agente Conti.
 
-Cada circuito es una conversación persistente de OpenHands SDK con:
-  - Workspace específico (LocalWorkspace con path distinto)
+Cada circuito tiene:
+  - Workspace específico (path distinto)
   - Tool set específico (qué tools nativas + MCP puede invocar)
   - Reglas de git específicas (qué puede hacer con git)
-  - LLM opcionalmente distinto (coding model para los 3 con código, lightweight para el 4)
+  - LLM opcionalmente distinto
 
-Los 4 circuitos son independientes. No hay delegación entre ellos. La
-comunicación entre circuitos se hace exclusivamente via git (push en uno,
-pull en otro cuando corresponde).
+Los 4 circuitos son independientes. No hay delegación entre ellos.
+
+Dos runtimes disponibles (seleccionados vía feature flag `CONTI_USE_OMP_AGENT`):
+  - OpenHands SDK (`Conversation` + `Agent`): legacy, aún soportado.
+  - oh-my-pi (`OmpClient` sobre conti-omp:7891): runtime nuevo (Sprint 4).
+  - Default: OpenHands SDK (mantiene status quo mientras validamos omp).
+  - Cuando flag activo: `OmpClient` (recomendado — más features, menos código).
 
 Tabla de circuitos (definida en este archivo, fuente única):
   1. desarrollo  → /desarrollo (rama develop de contamela-stack)
-                  tools: full + git run_salvar (preview)
+                  tools: full + git run_salvar (preview) → target = develop
                   puede: commit, push a develop
                   NO puede: promover a main, hacer deploy
-  2. produccion  → /compose (rama main de contamela-stack, RW)
-                  tools: full + git run_promover (merge develop→main + push)
-                  puede: promover, después sincronizar /desarrollo (git pull)
+  2. produccion  → /compose (rama main, RW) + /desarrollo (operativa)
+                  tools: full + git run_promover (develop→main+push)
+                  + run_hotfix_sync (main→develop)
+                  puede: promover, hotfix-sync main→develop
                   NO puede: 3-despliegue.sh, docker compose up -d prod
   3. backend     → /contenedores/conti-backend (rama main orquestador-contamela)
-                  tools: full + git run_salvar (preview)
+                  tools: full + git run_salvar (preview) → target = main
                   puede: commit, push a main de orquestador-contamela
   4. libre       → /tmp/free-agent (sin repo)
                   tools: SOLO MCP (sin file_editor, sin terminal, sin git)
                   puede: recibir ruta del host como argumento, trabajar
                          con fuentes externas si Luis da credenciales
                   NO puede: editar repos git
+
+Campos clave de CircuitConfig (nuevos en PLAN_3):
+  - git_action_target: rama a la que aplica git_action (default "develop").
+                       "backend" usa "main" porque ese repo solo tiene main.
+  - git_action_options: acciones git adicionales permitidas más allá de
+                       git_action. "produccion" incluye "run_hotfix_sync"
+                       para el flujo main→develop.
 """
 
 from __future__ import annotations
@@ -39,6 +51,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from app.core import categories as mcp_categories
 
 log = logging.getLogger("conti.circuits")
 
@@ -71,6 +85,8 @@ class CircuitConfig:
     allowed_tools_native: tuple[str, ...]
     allowed_mcp_categories: tuple[str, ...]
     git_action: str  # "run_salvar" | "run_promover" | "none"
+    git_action_target: str = "develop"  # rama destino de git_action
+    git_action_options: tuple[str, ...] = ()  # acciones extra, ej. ("run_hotfix_sync",)
     llm_model_override: str | None = None
 
 
@@ -89,24 +105,34 @@ NATIVE_TOOLS_FULL = (
 NATIVE_TOOLS_NONE: tuple[str, ...] = ()  # circuito 4: solo MCP
 
 
-# Categorías MCP (definidas en PLAN_2_LLM.md §3)
+# Categorías MCP (alineadas con app/core/categories.py — antes hardcoded)
 MCP_CATEGORIES_ALL = (
-    "bootstrap",  # health_check, get_config, get_rules, get_onboarding
-    "stack",  # get_container_health, get_container_logs, get_vps_status
-    "rag",  # search_rag*, start_rag_ingest*, catolico_*
-    "gitops",  # get_git_*, run_salvar (preview), run_promover (preview)
-    "filesystem",  # list_files, read_file, search_code_literal, grep_workspace
-    "odoo",  # odoo_* (21 tools)
-    "documents",  # start_markdown_translation, start_pdf_to_markdown
-    "sheets",  # sheet_account_*, sheet_lookup_partner, sheet_register_partner
+    mcp_categories.BOOTSTRAP,
+    mcp_categories.STACK,
+    mcp_categories.RAG,
+    mcp_categories.SOURCEBOT,
+    mcp_categories.GITOPS,
+    mcp_categories.FILESYSTEM,
+    mcp_categories.ODOO,
+    mcp_categories.DOCUMENTS,
+    mcp_categories.SHEETS,
+    mcp_categories.CATOLICO,
+    mcp_categories.CODE_EDIT,
+    mcp_categories.OBSERVABILITY,
 )
-MCP_CATEGORIES_NO_GIT = tuple(c for c in MCP_CATEGORIES_ALL if c != "gitops")
+MCP_CATEGORIES_NO_GIT = tuple(
+    c for c in MCP_CATEGORIES_ALL if c != mcp_categories.GITOPS
+)
 MCP_CATEGORIES_LIBRE = (
-    "bootstrap",
-    "rag",
-    "odoo",
-    "documents",
-    "sheets",
+    mcp_categories.BOOTSTRAP,
+    mcp_categories.RAG,
+    mcp_categories.SOURCEBOT,
+    mcp_categories.ODOO,
+    mcp_categories.DOCUMENTS,
+    mcp_categories.SHEETS,
+    mcp_categories.CATOLICO,
+    mcp_categories.FILESYSTEM,
+    mcp_categories.OBSERVABILITY,
 )
 
 
@@ -122,6 +148,7 @@ CIRCUITS: dict[str, CircuitConfig] = {
         allowed_tools_native=NATIVE_TOOLS_FULL,
         allowed_mcp_categories=MCP_CATEGORIES_ALL,
         git_action="run_salvar",
+        git_action_target="develop",
     ),
     "produccion": CircuitConfig(
         id="produccion",
@@ -129,25 +156,29 @@ CIRCUITS: dict[str, CircuitConfig] = {
         description=(
             "DevOps en rama main de contamela-stack (produccion). "
             "Promueve via run_promover (merge develop->main + push). "
-            "Después de promover, sincroniza /desarrollo (git checkout main && pull). "
+            "Sincroniza main->develop tras hotfix via run_hotfix_sync. "
             "NO corre 3-despliegue.sh ni docker compose -f producion.yml up -d "
             "(solo Luis puede)."
         ),
         allowed_tools_native=NATIVE_TOOLS_FULL,
         allowed_mcp_categories=MCP_CATEGORIES_ALL,
         git_action="run_promover",
+        git_action_target="develop",  # promover arranca desde develop
+        git_action_options=("run_hotfix_sync",),
     ),
     "backend": CircuitConfig(
         id="backend",
         workspace_dir="/contenedores/conti-backend",
         description=(
             "DevOps sobre orquestador-contamela (rama main). "
-            "Puede commitear y pushear via run_salvar (preview). "
-            "Sin flujo develop->main porque este repo solo tiene main."
+            "Puede commitear y pushear a main via run_salvar (preview). "
+            "Sin flujo develop->main porque este repo solo tiene main. "
+            "run_hotfix_sync NO aplica (no hay develop)."
         ),
         allowed_tools_native=NATIVE_TOOLS_FULL,
         allowed_mcp_categories=MCP_CATEGORIES_ALL,
         git_action="run_salvar",
+        git_action_target="main",
     ),
     "libre": CircuitConfig(
         id="libre",
@@ -161,6 +192,7 @@ CIRCUITS: dict[str, CircuitConfig] = {
         allowed_tools_native=NATIVE_TOOLS_NONE,
         allowed_mcp_categories=MCP_CATEGORIES_LIBRE,
         git_action="none",
+        git_action_target="",
     ),
 }
 
@@ -189,6 +221,14 @@ CIRCUIT_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
             "en producción",
             "en produccion",
             "a main",
+            # Hotfix sync (main → develop)
+            "hotfix",
+            "sync main",
+            "main a develop",
+            "sincronizar main",
+            "sincronizá main",
+            "pull de main",
+            "main to develop",
         ),
     ),
     (
@@ -248,27 +288,48 @@ def detect_circuit(prompt: str, force: str | None = None) -> str:
 
 
 class CircuitManager:
-    """Mantiene las 4 conversaciones persistentes en memoria."""
+    """Mantiene los 4 runtimes persistentes (uno por circuito) en memoria.
+
+    Runtime seleccionable vía feature flag `CONTI_USE_OMP_AGENT`:
+      - true  → OmpClient (oh-my-pi via conti-omp:7891, Sprint 4)
+      - false → OpenHands SDK Conversation (legacy, default)
+    """
 
     def __init__(self) -> None:
-        self._conversations: dict[str, Any] = {}
+        self._conversations: dict[str, Any] = {}  # OpenHands SDK
+        self._omp_clients: dict[str, Any] = {}  # oh-my-pi
         self._initialized: dict[str, bool] = {}
 
     def get_or_create(self, circuit_id: str) -> Any:
-        """Devuelve la conversación del circuito, creándola si no existe."""
+        """Devuelve el runtime del circuito, creándolo si no existe.
+
+        Returns:
+            - OmpClient si CONTI_USE_OMP_AGENT=true
+            - OpenHands Conversation si no
+        """
+        from app.openhands_agent.omp_client import is_omp_enabled
+
         if circuit_id not in CIRCUITS:
             raise ValueError(f"circuito desconocido: {circuit_id}")
         if self._initialized.get(circuit_id):
+            if is_omp_enabled():
+                return self._omp_clients.get(circuit_id)
             return self._conversations.get(circuit_id)
 
         cfg = CIRCUITS[circuit_id]
         log.info(
-            "[circuits] inicializando circuito '%s' workspace=%s",
+            "[circuits] inicializando circuito '%s' workspace=%s runtime=%s",
             cfg.id,
             cfg.workspace_dir,
+            "omp" if is_omp_enabled() else "openhands",
         )
-        self._conversations[circuit_id] = self._build_conversation(cfg)
+        if is_omp_enabled():
+            self._omp_clients[circuit_id] = self._build_omp_client(cfg)
+        else:
+            self._conversations[circuit_id] = self._build_conversation(cfg)
         self._initialized[circuit_id] = True
+        if is_omp_enabled():
+            return self._omp_clients[circuit_id]
         return self._conversations[circuit_id]
 
     def _build_conversation(self, cfg: CircuitConfig) -> Any:
@@ -322,11 +383,11 @@ class CircuitManager:
             tools_list.append(Tool(name=tool_name))
 
         # ── MCP tools del backend conti (:9001/mcp) ─────────────────
-        # Integra las 64 MCP tools (odoo_*, run_salvar, search_rag*, etc.)
-        # en el loop del agente via SDK nativo. Conexión HTTP loopback al
-        # mismo proceso uvicorn (no importa el loopback como dijiste).
-        # Solo si el circuito tiene categorías MCP permitidas (no "libre"
-        # sin gitops).
+        # Integra las MCP tools permitidas por el circuito en el loop del
+        # agente via SDK nativo. Conexión HTTP loopback al mismo proceso
+        # uvicorn. FILTRADO REAL por categoría (Sprint 1.5 PLAN_3):
+        # antes cargaba TODAS las 64 tools; ahora respeta las categorías
+        # declaradas en cfg.allowed_mcp_categories usando el registro MCP.
         if cfg.allowed_mcp_categories:
             try:
                 from openhands.sdk.mcp import create_mcp_tools
@@ -345,14 +406,27 @@ class CircuitManager:
                         timeout=30,
                     )
                 )
-                # Filtrar tools MCP según categorías permitidas del circuito
-                # Para empezar, incluirlas todas si allowed_mcp_categories != ()
-                tools_list.extend(mcp_tools)
+
+                # Calcular set de nombres de tools permitidos por categoría
+                allowed_names: set[str] = set()
+                from app.services.registry_service import registry_service
+
+                registry = registry_service()
+                for tool_def in registry.list_tools():
+                    if tool_def.get("category") in cfg.allowed_mcp_categories:
+                        allowed_names.add(tool_def["name"])
+
+                # Filtrar mcp_tools (OpenHands SDK Tool objects) por nombre
+                filtered_mcp_tools = [
+                    t for t in mcp_tools if getattr(t, "name", None) in allowed_names
+                ]
+                tools_list.extend(filtered_mcp_tools)
                 log.info(
-                    "[circuits] %s: %d MCP tools cargadas desde %s",
+                    "[circuits] %s: %d/%d MCP tools cargadas (filtradas por categorías %s)",
                     cfg.id,
+                    len(filtered_mcp_tools),
                     len(mcp_tools),
-                    mcp_url,
+                    cfg.allowed_mcp_categories,
                 )
             except Exception as exc:
                 log.warning(
@@ -371,13 +445,183 @@ class CircuitManager:
         workspace = LocalWorkspace(working_dir=cfg.workspace_dir)
         return Conversation(agent=agent, workspace=workspace)
 
+    def _build_omp_client(self, cfg: CircuitConfig) -> Any:
+        """Construye un OmpClient para el circuito dado.
+
+        El OmpClient habla con conti-omp:7891 vía stdio NDJSON sobre TCP
+        socket (expuesto por socat en el container). omp --mode rpc corre
+        el agent loop internamente.
+
+        El system prompt base (Ponytail rules + circuit description +
+        tool list) se setea UNA VEZ al constructor. Es estático por
+        circuito — no cambia entre requests. Cambia solo si Luis
+        cambia el AGENTS.md de Ponytail o las reglas del circuito
+        (que requiere recrear el OmpClient).
+
+        Sprint 4.2: además construye custom_tools = MCP tools filtradas
+        por categoría y registradas como host_tool en omp. omp las invoca
+        como built-in, pero el handler Python hace JSON-RPC loopback
+        a :9001/mcp.
+        """
+        from app.openhands_agent.omp_client import make_omp_client_for_circuit
+        from app.openhands_agent.tool_bridge import build_custom_tools_for_circuit
+
+        # omp_rpc.RpcClient spawn el subprocess con `cwd=workspace_dir`,
+        # así que el directorio DEBE existir antes de start().
+        Path(cfg.workspace_dir).mkdir(parents=True, exist_ok=True)
+
+        # Construir custom_tools (MCP loopback filtrado por categoría).
+        from app.services.registry_service import registry_service
+
+        registry = registry_service()
+        mcp_url = os.getenv("CONTI_MCP_URL", "http://127.0.0.1:9001/mcp")
+        custom_tools = build_custom_tools_for_circuit(cfg, registry, mcp_url)
+
+        # Construir el system prompt base para omp (estático per-circuit).
+        system_prompt = self._build_omp_system_prompt(cfg)
+
+        return make_omp_client_for_circuit(
+            cfg,
+            append_system_prompt=system_prompt,
+            custom_tools=custom_tools,
+        )
+
+    @staticmethod
+    def _build_omp_system_prompt(cfg: CircuitConfig) -> str:
+        """Construye el system prompt base para el omp subprocess.
+
+        Contiene:
+          - Ponytail rules (AGENTS.md)
+          - Descripción del circuito
+          - Reglas de operación y onboarding
+          - Lista detallada de MCP tools disponibles (nombres, descripciones,
+            args, ejemplos de uso)
+          - Información de Sourcebot (endpoint, formato de request, cómo usarlo)
+
+        El user_task del circuito (parte dinámica) se pasa como user_prompt
+        a prompt_and_wait(), NO se concatena al system prompt (porque omp
+        persistiría el system prompt en su session history).
+        """
+        from pathlib import Path
+
+        sections: list[str] = []
+
+        # 1) Ponytail rules (onboarding)
+        ponytail_rules_path = Path("/app/vendor/ponytail/AGENTS.md")
+        if ponytail_rules_path.exists():
+            try:
+                sections.append(ponytail_rules_path.read_text(encoding="utf-8").strip())
+            except Exception:
+                pass
+
+        # 2) Circuit description
+        sections.append(
+            f"# Circuit: {cfg.id}\n\n"
+            f"{cfg.description}\n\n"
+            f"Workspace: {cfg.workspace_dir}\n"
+            f"Git action permitida: {cfg.git_action}\n"
+        )
+
+        # 3) MCP tools (solo nombres, agrupadas por categoría)
+        try:
+            from app.services.registry_service import registry_service
+
+            registry = registry_service()
+            tools = registry.list_tools()
+            if tools:
+                # Agrupar tools por categoría si tienen metadata
+                tools_by_cat: dict[str, list[str]] = {}
+                for tool in tools:
+                    name = tool.get("name", "?")
+                    cat = tool.get("category", "general")
+                    tools_by_cat.setdefault(cat, []).append(name)
+
+                tools_section = "# MCP Tools Disponibles\n\n"
+                tools_section += (
+                    "Las siguientes tools MCP están disponibles en el servidor.\n"
+                    "Para invocarlas, usá bash + curl:\n\n"
+                    "```bash\n"
+                    "curl -s -X POST http://conti-backend:9001/mcp/call \\\n"
+                    "  -H 'Content-Type: application/json' \\\n"
+                    '  -d \'{"name": "TOOL_NAME", "arguments": {}}\'\n'
+                    "```\n\n"
+                )
+                for cat, names in sorted(tools_by_cat.items()):
+                    tools_section += f"## {cat}\n"
+                    tools_section += ", ".join(sorted(names)) + "\n\n"
+                sections.append(tools_section)
+        except Exception as exc:
+            log.warning("[circuits] no pude cargar MCP tools: %s", exc)
+
+        # 4) Sourcebot info
+        sourcebot_section = (
+            "# Sourcebot (búsqueda de código)\n\n"
+            "Tenés acceso a Sourcebot, un motor de búsqueda de código que indexa "
+            "los 3 repos del stack: orquestador-contamela, contamela-stack (develop y main).\n\n"
+            "## Cómo usarlo\n"
+            "- Endpoint: `http://conti-sourcebot:3000/api/search`\n"
+            '- Método: POST con JSON `{"query": "términos", "matches": N}`\n'
+            "- NO requiere autenticación (acceso anónimo habilitado)\n"
+            "- **Funciona mejor con queries cortas (1-3 keywords técnicas)**\n"
+            '  Ejemplo: `"django views"`, `"chatui"`, `"mcp tools"`\n\n'
+            "## Respuesta\n"
+            "Devuelve `{stats, files: [...]}` donde cada file tiene:\n"
+            "- `fileName`: {text, matchRanges}\n"
+            "- `chunks`: [{content, contentStart: {lineNumber}}]\n"
+            "- `language`, `repository`, `branches`, `webUrl`\n\n"
+            "## Ejemplo de uso desde bash\n"
+            "```bash\n"
+            "curl -X POST http://conti-sourcebot:3000/api/search \\\n"
+            "  -H 'Content-Type: application/json' \\\n"
+            '  -d \'{"query": "django views", "matches": 5}\'\n'
+            "```\n"
+        )
+        sections.append(sourcebot_section)
+
+        # 5) Reglas de operación del circuito
+        if cfg.id == "backend":
+            sections.append(
+                "# Reglas del circuito backend\n\n"
+                "- SIEMPRE validá con `validate_python_syntax` antes de commitear\n"
+                "- SIEMPRE ejecutá `run_pytest` después de editar código\n"
+                "- Si algún test falla, NO commitees, arreglá primero\n"
+                "- Usá `sourcebot_search` para buscar código antes de editar\n"
+                "- Usá `ponytail_record_trace` para registrar la traza al final\n"
+                "- **NO uses `get_config`** - está deprecated y causa timeouts\n"
+                "- **NO busques el endpoint MCP** - ya lo sabés: `http://localhost:9001/mcp`\n"
+                "- Para listar tools MCP: `curl -s http://localhost:9001/mcp`\n"
+                "- Para ejecutar una tool MCP: `curl -s -X POST http://localhost:9001/mcp "
+                "-H 'Content-Type: application/json' "
+                '-d \'{"jsonrpc":"2.0","id":1,"method":"tools/call",'
+                '"params":{"name":"TOOL_NAME","arguments":{...}}}\'`\n'
+                "- **Leé los archivos directamente** del workspace "
+                f"(`{cfg.workspace_dir}`) - no necesitas buscar la URL del MCP\n"
+            )
+        elif cfg.id in ("desarrollo", "produccion"):
+            sections.append(
+                f"# Reglas del circuito {cfg.id}\n\n"
+                "- Usá `run_salvar` para commitear y pushear\n"
+                "- Usá `run_promover` para promover develop → main (solo en producción)\n"
+                "- Usá `sourcebot_search` para buscar código antes de editar\n"
+                "- Usá `ponytail_record_trace` para registrar la traza al final\n"
+            )
+
+        return "\n\n---\n\n".join(sections)
+
     def is_ready(self, circuit_id: str) -> bool:
         return self._initialized.get(circuit_id, False)
 
+    def is_omp_client(self, circuit_id: str) -> bool:
+        """True si el runtime del circuito es OmpClient (no OpenHands)."""
+        return circuit_id in self._omp_clients
+
     def status(self) -> dict[str, Any]:
+        from app.openhands_agent.omp_client import is_omp_enabled
+
         return {
             cid: {
                 "ready": self._initialized.get(cid, False),
+                "runtime": "omp" if cid in self._omp_clients else "openhands",
                 "workspace": CIRCUITS[cid].workspace_dir,
                 "git_action": CIRCUITS[cid].git_action,
             }

@@ -16,6 +16,10 @@ RUN mkdir -p /etc/apt/keyrings && \
     apt-get update && apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+# Configurar npm para instalar paquetes globales en /usr/local/lib/node_modules
+# accesible a todos los usuarios (no en ~/.npm-global que es específico del usuario)
+RUN npm config set prefix /usr/local
+
 # SpineDigest global
 RUN npm install -g spinedigest --build-from-source
 
@@ -95,7 +99,7 @@ RUN useradd -m -u 1000 -s /bin/bash nanobot && \
 
 USER nanobot
 ENV HOME=/home/nanobot
-ENV PATH="/usr/local/bin:${PATH}"
+ENV PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 ENV CLAWTEAM_DATA_DIR=/nanobot/.clawteam
 ENV CLAWTEAM_WORKSPACE=auto

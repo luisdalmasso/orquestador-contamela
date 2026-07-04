@@ -33,11 +33,36 @@ services:
       - SPINEDIGEST_LLM_MODEL=gemini-2.0-flash
       - SPINEDIGEST_LLM_API_KEY=AIzaSyBoKn0azg46YLwTUmTJGWGr8emXSUHD2_I
       - SPINEDIGEST_CACHE_DIR=/compose/documentos_listos/.spinedigest_cache
-      # OpenHands LLM via Mistral API — modelo mistral-small-latest
-      - OPENHANDS_LLM_MODEL=mistral/mistral-small-latest
-      - OPENHANDS_LLM_BASE_URL=https://api.mistral.ai/v1
-      - OPENHANDS_LLM_API_KEY=KkwZJdkcmtP3zKYRdOhyHltpxJxUarna
+      # OpenHands LLM via Xiaomi Token Plan Singapore (OpenAI-compatible)
+      - OPENHANDS_LLM_MODEL=openai/mimo-v2.5-pro
+      - OPENHANDS_LLM_BASE_URL=https://token-plan-sgp.xiaomimimo.com/v1
+      - OPENHANDS_LLM_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
       - OPENHANDS_LLM_MAX_TOKENS=4000
+      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
+      # ── Sprint 4: oh-my-pi agent runtime ──────────────────────────────
+      # CONTI_USE_OMP_AGENT=true → usar OmpClient (oh-my-pi via conti-omp:7891).
+      # CONTI_USE_OMP_AGENT=false (default) → usar OpenHands SDK legacy.
+      # Cambiar el flag requiere `docker compose restart conti-backend`.
+      - CONTI_USE_OMP_AGENT=true
+      # OMP_HOST/OMP_PORT configuran OmpClient. Defaults: conti-omp:7891.
+      - OMP_HOST=${OMP_HOST:-conti-omp}
+      - OMP_PORT=${OMP_PORT:-7891}
+      # ── Sprint 4.3: Ponytail trace + Docs-as-Code ─────────────────────
+      # PONYTAIL_TRACE_DIR: donde se persisten los .md. Default .ponytail/traces/
+      # relativo al cwd del conti-backend. Para producción debe ser absolute
+      # path al repo del circuit activo (ej: /compose/.ponytail/traces/).
+      - PONYTAIL_TRACE_DIR=${PONYTAIL_TRACE_DIR:-.ponytail/traces/}
+      # PONYTAIL_COMMIT_TRACES: si true, hace git add + commit async (no push).
+      - PONYTAIL_COMMIT_TRACES=${PONYTAIL_COMMIT_TRACES:-true}
+      # PONYTAIL_PUSH_TRACES: si true, hace git push origin HEAD después del commit.
+      # Default: true. Setear a false solo para desarrollo/testing donde no querés pushear.
+      - PONYTAIL_PUSH_TRACES=${PONYTAIL_PUSH_TRACES:-true}
+      # PONYTAIL_TRACE_RETENTION_DAYS: cleanup automático (Sprint 5+).
+      - PONYTAIL_TRACE_RETENTION_DAYS=${PONYTAIL_TRACE_RETENTION_DAYS:-90}
+      # OMP_PROMPT_TIMEOUT: timeout de prompt_and_wait (en segundos).
+      - OMP_PROMPT_TIMEOUT=${OMP_PROMPT_TIMEOUT:-360}
+      # TZ: zona horaria para trazas y logs (Mendoza, Argentina GMT-3).
+      - TZ=America/Argentina/Mendoza
     volumes:
       # Google Workspace (credentials + token)
       - ./google-workspace:/code/google-workspace
@@ -50,10 +75,16 @@ services:
       - /desarrollo:/desarrollo
       # /compose ahora es RW porque el circuito "produccion" necesita
       # ejecutar git checkout/merge/push para promover develop→main.
-      # El agente NO edita archivos de código acá directamente — solo
-      # opera git. Cambios de código en /compose se siguen haciendo
-      # por el flujo develop→main (nunca manualmente).
+      # Ademas, el circuito "produccion" permite el flujo HOTFIX
+      # (run_hotfix_sync): Luis puede editar archivos in-place en /compose
+      # para un fix urgente, y el agente sincroniza esos cambios hacia
+      # /desarrollo (rama develop) automaticamente.
       - /compose:/compose
+      # /contenedores/conti-backend (RW): requerido por el circuito "backend"
+      # (orquestador-contamela, solo rama main). Sin este bind-mount, los
+      # commits con run_salvar en ese circuito solo impactarian la imagen
+      # Docker, no el working tree del host.
+      - /contenedores/conti-backend:/contenedores/conti-backend
       - /var/run/docker.sock:/var/run/docker.sock
       - ./claw_data:/app/data
       # Hot-reload: app bindeada para desarrollo sin rebuild
@@ -61,8 +92,10 @@ services:
       # Hermes profiles (hot-reload de configuración sin rebuild)
       - ./app/hermes_profiles:/app/hermes_profiles
       # Configuración de los agentes (Arquitecto, DevOps, Developer)
-      - /desarrollo/config/team.toml:/app/config/team.toml:ro
-      - /desarrollo/shared_skills:/app/skills:ro # Tus scripts de python con skills
+      - /desarrollo/config/team.toml:/app/config/team.toml
+      - /desarrollo/shared_skills:/app/skills
+      # Tus scripts de python con skills
+      - cbm_cache:/home/conti/.cache/codebase-memory-mcp
     ports:
       - "9007:9001"
       - "9001:9001"
@@ -80,8 +113,10 @@ services:
       - "9119:9119"
       # OpenHands Agent Server (API REST del agente)
       - "3011:3000"
-      # OpenHands Web GUI (frontend textual web en :3001 interno)
-      - "3012:3001"
+      # OpenHands Agent Canvas (GUI Next.js oficial en :3012 interno)
+      - "3012:3012"
+      # OpenHands CLI textual embebido en web (frontend Textual en :3001)
+      - "3013:3001"
     mem_limit: 24g
     cpus: 4
     cap_add:
@@ -114,56 +149,120 @@ services:
   # DB `sourcebot` ya creada en compose-db-1. Redis DB 14 (la más alta libre
   # en el rango default 0-15, ya que las DBs 0/2/15 están en uso por
   # django-api celery, otros servicios y Evolution API respectivamente).
-  sourcebot:
+  # SOURCEBOT REMOVIDO: reemplazado por codebase-memory-mcp (MCP stdio)
+  # que indexa los 3 repos como knowledge graph. Ver entrypoint de conti-omp.
+  # sourcebot:
+  #   build:
+  #     context: ./sourcebot
+  #     dockerfile: Dockerfile
+  #   image: conti-sourcebot:latest
+  #   container_name: conti-sourcebot
+  #   ...
+
+# conti-omp-base: imagen OFICIAL de oh-my-pi, construida desde el
+  # Dockerfile de can1357/oh-my-pi (vendor/oh-my-pi/Dockerfile).
+  # SIN MODIFICACIONES. Servicio build-only — no corre como container.
+  # Produce la imagen `conti-omp-base:v16.2.9` que `conti-omp` extiende.
+  #
+  # Para actualizar la versión:
+  #   cd vendor/oh-my-pi && git fetch --tags && git checkout vX.Y.Z
+  #   docker compose build conti-omp-base conti-omp
+  conti-omp-base:
     build:
-      context: ./sourcebot
-      dockerfile: Dockerfile
-    image: conti-sourcebot:latest
-    container_name: conti-sourcebot
-    restart: unless-stopped
-    user: sourcebot
-    depends_on:
-      - conti-backend
-    ports:
-      - "3010:3000"
-    volumes:
-      - ./sourcebot/config.json:/data/config.json:ro
-      - sourcebot_data:/data
-      - /desarrollo:/desarrollo:ro
-      - /compose:/compose:ro
-      # El propio backend: indexa /contenedores/conti-backend
-      # (orquestador-contamela, branch main) desde el working tree local
-      - /contenedores/conti-backend:/contenedores/conti-backend:ro
-    environment:
-      - CONFIG_PATH=/data/config.json
-      - AUTH_URL=http://localhost:3010
-      - AUTH_SECRET=${SOURCEBOT_AUTH_SECRET:-000000000000000000000000000000000}
-      - SOURCEBOT_ENCRYPTION_KEY=${SOURCEBOT_ENCRYPTION_KEY:-00000000000000000000000000000000}
-      # Conexión directa a compose-db-1 por nombre DNS (misma red).
-      - DATABASE_URL=postgresql://odoo:odoo@compose-db-1:5432/sourcebot
-      # Conexión directa a redis_odoo por nombre DNS (misma red).
-      # DB 14: la más alta libre en el rango default 0-15 de Redis.
-      # DBs en uso por el stack compartido (/compose/producion.yml):
-      #   0  -> django-api celery broker + result backend
-      #   2  -> otros servicios (chainlit/redis_odoo container)
-      #   15 -> Evolution API (REDIS_DB=15)
-      # 1-13 están libres; elegimos 14 para mantener distancia del cluster bajo
-      # y reducir probabilidad de colisión con servicios futuros.
-      - REDIS_URL=redis://redis_odoo:6379/14
-      - SOURCEBOT_TELEMETRY_DISABLED=true
-      - TZ=America/Argentina/Mendoza
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      context: ./vendor/oh-my-pi
+      dockerfile: Dockerfile      # OFICIAL, default name, sin tocar
+    image: conti-omp-base:${OMP_VERSION:-v16.2.9}
     networks:
-      - desarrollo_odoo-network-dev
+      - compose_odoo-network
+
+  # conti-omp: thin layer sobre conti-omp-base. Único propósito:
+  # instalar socat + netcat (necesita root en build-time) + copiar
+  # entrypoint script + configurar entrypoint. ~15 líneas de Dockerfile.
+  # NO reproduce el wheel — el grueso lo hace conti-omp-base.
+  conti-omp:
+    build:
+      # Build context = docker/conti-omp (tiene nuestro Dockerfile y
+      # entrypoint.sh). dockerignore del directorio filtra lo demás.
+      context: ./docker/conti-omp
+      dockerfile: Dockerfile
+      args:
+        OMP_BASE_TAG: ${OMP_VERSION:-v16.2.9}
+    image: conti-omp:${OMP_VERSION:-v16.2.9}
+    container_name: conti-omp
+    restart: unless-stopped
+    # NOTA sobre build order: docker compose NO soporta depends_on entre
+    # build stages. Para construir en orden correcto:
+    #   docker compose build conti-omp-base conti-omp
+    # (compose respeta el orden de los argumentos en `build`).
+    # Usuario no root (UID 1000 = mismo que conti-backend).
+    user: "1000:1000"
+    environment:
+      # ── LLM config (OBLIGATORIO — entrypoint.sh falla si falta) ────
+      - OMP_PROFILE=conti
+      # ── LLM Provider: Xiaomi Token Plan Singapore (built-in en omp) ──
+      # omp tiene provider built-in 'xiaomi-token-plan-sgp' que usa
+      # XIAOMI_TOKEN_PLAN_SGP_API_KEY como env var.
+      # NO necesita models.yml custom.
+      - OMP_MODEL=xiaomi-token-plan-sgp/mimo-v2.5-pro
+      - OMP_PROVIDER=xiaomi-token-plan-sgp
+      - OMP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
+      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
+      # ── Plan mode (Fase 1 PLAN_3 §15.ter) ───────────────────────────
+      - OMP_PLAN=${OMP_PLAN:-0}
+      # ── Tracing / observability ─────────────────────────────────────
+      - PI_COMPILED=1
+    volumes:
+      # Mismos repos que conti-backend, RW (omp necesita escribir para
+      # sus tools de edit, run_salvar equivalente, hashline patches).
+      - /desarrollo:/desarrollo
+      - /compose:/compose
+      - /contenedores/conti-backend:/contenedores/conti-backend
+      # HOME persistente para .omp/sessions/, retain/recall/reflect,
+      # Hindsight bank, advisor config.
+      - omp_home:/home/conti
+      # Cache de modelos y catalog: .omp/agent/, .omp/cache/.
+      - omp_data:/data
+      # Persistir índices de codebase-memory-mcp (619MB, ~3 min para re-indexar)
+      - /home/admin_odoo/cbm_cache:/home/conti/.cache/codebase-memory-mcp
+      # Google Workspace (credentials + token)
+      - ./google-workspace:/code/google-workspace
+      # Voice
+      - ./voice:/code/voice
+      # HOME del usuario nanobot dentro del contenedor (SOUL.md, .env, etc).
+      # Nota: la carpeta se llama "nanobot" por histórico, pero hoy sólo
+      # contiene el HOME compartido del usuario de runtime.
+      - ./conti_home:/home/nanobot/
+      - /contenedores/conti-backend:/contenedores/conti-backend
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./claw_data:/app/data
+      # Hot-reload: app bindeada para desarrollo sin rebuild
+      - ./app:/app/app
+      # Hermes profiles (hot-reload de configuración sin rebuild)
+      - ./app/hermes_profiles:/app/hermes_profiles
+      # Configuración de los agentes (Arquitecto, DevOps, Developer)
+      - /desarrollo/config/team.toml:/app/config/team.toml
+      - /desarrollo/shared_skills:/app/skills      
+    ports:
+      # TCP socket expuesto a conti-backend (interno) y opcionalmente
+      # al host para debug manual.
+      - "7891:7891"
+      # OpenHands Agent Server GUI (puerto 3000 interno → 3011 externo)
+      - "3011:3000"
+    # Healthcheck: socat acepta conexiones TCP en :7891.
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 7891 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
       - compose_odoo-network
 
 volumes:
   sourcebot_data: null
+  omp_home: null
+  omp_data: null
+  cbm_cache: null
 
 networks:
   desarrollo_odoo-network-dev: 

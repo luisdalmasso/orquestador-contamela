@@ -1,0 +1,424 @@
+{
+  "task_id": "trace-1783196703964",
+  "task_name": "Analiza el endpoint /mcp del contenedor conti-backend y documenta todas las tools en un documento mcp_tools_doc.md",
+  "circuit": "backend",
+  "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-04_analiza_el_endpoint__mcp_del_contenedor_357b7ed0ea6c",
+  "started_at": 1783196703.9647615,
+  "ended_at": 1783197334.6497865,
+  "events": [
+    {
+      "event": "start",
+      "ts": 1783196703.9702902,
+      "data": {
+        "task": "Analiza el endpoint /mcp del contenedor conti-backend y documenta todas las tools en un documento mcp_tools_doc.md",
+        "payload_keys": [
+          "messages",
+          "circuit",
+          "_circuit",
+          "_session"
+        ],
+        "circuit": "backend",
+        "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-04_analiza_el_endpoint__mcp_del_contenedor_357b7ed0ea6c"
+      }
+    },
+    {
+      "event": "circuit_selected",
+      "ts": 1783196703.972832,
+      "data": {
+        "id": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "session_id": "357b7ed0ea6c",
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783196703.9800313,
+      "data": {
+        "tool": "get_onboarding",
+        "error": "' (f)<-'"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783196703.9855397,
+      "data": {
+        "tool": "get_rules",
+        "chars": 7492
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783196703.991779,
+      "data": {
+        "tool": "get_config",
+        "chars": 3246
+      }
+    },
+    {
+      "event": "governance_injected",
+      "ts": 1783196703.991803,
+      "data": {
+        "onboarding_len": 10773,
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "openhands_orchestrator_start",
+      "ts": 1783196704.1796596,
+      "data": {
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "is_new_session": false,
+        "prompt_len": 114,
+        "governance_len": 10773
+      }
+    },
+    {
+      "event": "conversation_created",
+      "ts": 1783196734.4083438,
+      "data": {
+        "conversation_id": "3514e5fa-063e-4c1c-b775-cfe8214b8b04",
+        "workspace": "/contenedores/conti-backend"
+      }
+    },
+    {
+      "event": "system_prompt",
+      "ts": 1783196734.4084046,
+      "data": {
+        "length": 11243,
+        "is_new_session": false,
+        "governance_chars": 10773,
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend"
+      }
+    },
+    {
+      "event": "prompt_injected",
+      "ts": 1783196734.4084065,
+      "data": {
+        "prompt_full": "## get_rules\n\n# Rules — Conti Backend (actualizado PLAN_3 v1.5, 30/jun/2026)\n\n## Reglas de vida o muerte\n\n1. NUNCA ejecutar `git commit`, `git push`, `git merge`, `git reset`,\n   `git rebase` directo en el shell del agente.\n   Solo usar las tools dedicadas: `run_salvar` (preview), `run_promover`\n   (preview), `run_hotfix_sync` (preview). Estas pasan por el Gatekeeper\n   (`validate_diff`) antes de aplicar.\n\n2. NUNCA ejecutar `bash /compose/3-despliegue.sh` ni\n   `docker compose -f producion.yml up -d`. Solo Luis puede deployar.\n\n3. Toda acción destructiva → preview + confirmación explícita (`confirm=true`).\n\n4. Idioma: siempre Español.\n\n5. `/compose` es RW SOLO para git (commit/push en main, git pull desde\n   origin). Cambios de código en producción normalmente van por el flujo\n   develop → main. Edición directa en `/compose` solo se permite para\n   hotfixes urgentes.\n\n## Reglas operacionales\n\n6. Operar DENTRO del contenedor, sin SSH (los bind-mounts ya conectan el\n   host con el working dir del agente).\n\n7. Si la tarea accede a algo FUERA de `/desarrollo`, `/compose`,\n   `/contenedores/conti-backend`, `/home/nanobot`: pedir credenciales a\n   Luis explícitamente antes de proceder.\n\n8. Acción sobre palabras: nada de \"¡Gran pregunta!\", \"¡Excelente!\", etc.\n   Respuestas técnicas, directas y concisas.\n\n9. Si Luis modificó archivos en `/compose` directamente, avisar del\n   riesgo antes de cualquier operación: `3-despliegue.sh` puede hacer\n   `git reset --hard` y borrar archivos uncommitted.\n\n## Reglas MCP\n\n10. Usar solo tools registradas por el backend (`get_rules`, `get_config`,\n    `get_onboarding` las lista).\n11. No inventar nombres de tools ni schemas.\n12. Validar argumentos antes de ejecutar mutaciones.\n13. Respetar allowlists de paths y visibilidades del circuito activo.\n\n## Reglas de los 4 circuitos\n\n14. `circuit: desarrollo` (workspace `/desarrollo`, branch `develop`):\n    - `run_salvar` commitea y pushea a develop.\n    - `run_promover` y `run_hotfix_sync` NO aplican acá.\n    - Code editing: editar solo dentro de `/desarrollo`. Validar con\n      `validate_python_syntax` y opcionalmente `run_pytest`.\n    - **Trazas de Ponytail**: Se guardan en `/desarrollo/.ponytail/traces/`\n      con formato `YYYY-MM-DD_desarrollo_tr-<hash>.md`.\n\n15. `circuit: produccion` (workspace operativo `/desarrollo`, branch\n    `develop` para promover; `/compose` para hotfix en main):\n    - `run_promover` fusiona develop → main (merge --no-ff) + push main.\n    - `run_hotfix_sync` commitea cambios en `/compose` (main) y los\n      sincroniza a `/desarrollo` (develop) via merge --no-ff.\n    - NO corre `3-despliegue.sh` (solo Luis).\n    - El deploy real lo hace Luis fuera del agente.\n    - Code editing: editar solo dentro de `/compose` (para hotfix) o\n      `/desarrollo` (vía `run_promover` después). NO editar código\n      en `/compose` para cambios normales — usar flujo develop→main.\n    - **Trazas de Ponytail**:\n      - Si el usuario edita archivos directamente en `/compose`, las trazas\n        se guardan en `/compose/.ponytail/traces/` (rama `main`).\n      - Si el usuario trabaja en `/desarrollo` y promueve a `main`, las trazas\n        se guardan en `/desarrollo/.ponytail/traces/` (rama `develop`).\n\n16. `circuit: backend` (workspace `/contenedores/conti-backend`, branch\n    `main`):\n    - `run_salvar` commitea y pushea a main directamente (este repo solo\n      tiene main).\n    - `run_promover` y `run_hotfix_sync` NO aplican.\n    - **Code editing OBLIGATORIO pre-commit**:\n      1. `validate_python_syntax(paths=[<archivos>])` → debe pasar.\n      2. `run_pytest(circuit=\"backend\", test_path=<módulo_afectado>)` →\n         debe pasar.\n      3. (Opcional pero recomendado) `run_pytest(circuit=\"backend\")` →\n         suite completa verde.\n    - Si validate_python_syntax falla → NO commitear, arreglar primero.\n    - Si run_pytest falla → NO commitear, arreglar primero.\n    - **Trazas de Ponytail**: Se guardan en `/contenedores/conti-backend/.ponytail/traces/`\n      con formato `YYYY-MM-DD_backend_tr-<hash>.md`.\n\n17. `circuit: libre` (workspace `/tmp/free-agent`):\n    - SIN acceso a repos git. No tools nativas.\n    - Categorías MCP permitidas: bootstrap, rag, odoo, documents, sheets,\n      catolico, filesystem. **NO** tiene gitops, stack, code_edit.\n    - Si Luis pasa una ruta del host no bind-mounted, pedir credenciales.\n    - Si la tarea requiere editar código: usar `detect_circuit_from_path`\n      primero para saber a qué circuito mandar la edición, y pedirle a\n      Luis que la haga explícitamente en ese circuito.\n\n## Reglas del flujo hotfix sync (`run_hotfix_sync`)\n\n18. `run_hotfix_sync` requiere:\n    - `/compose` limpio, en rama `main`, con commits adelantados de\n      `origin/main` (los del hotfix).\n    - `/desarrollo` limpio, en rama `develop`.\n\n19. Si `/desarrollo` tiene commits locales no pusheados que conflictúan\n    con main, el merge aborta y reporta. NO forzar — pedir a Luis que\n    resuelva el conflicto manualmente.\n\n20. Orden obligatorio antes de cualquier deploy:\n    1) commit + push main en `/compose`\n    2) `run_hotfix_sync` (sincroniza main → develop)\n    3) deploy (solo Luis: `bash /compose/3-despliegue.sh`)\n    Si 3-despliegue.sh corre antes del paso 1, los cambios uncommitted\n    se pierden.\n\n21. Si el merge en `/desarrollo` resulta no-op (main ya está en develop),\n    el agente debe detectarlo y avisar en lugar de crear un merge commit\n    vacío.\n\n## Reglas de code editing por circuito (Sprint 1.5)\n\n22. **Pre-flight obligatorio antes de `run_salvar` en circuito `backend`**:\n    - `validate_python_syntax` debe devolver `all_ok: true`.\n    - `run_pytest` debe devolver `returncode: 0`.\n    - Si cualquiera falla, NO ejecutar `run_salvar`. Reportar el error a Luis.\n\n23. **Cross-circuit file movement**: nunca muevas archivos entre\n    `/desarrollo`, `/compose` y `/contenedores/conti-backend` con `cp`\n    o `mv` directo. Usá `git` (vía `run_salvar` + `run_hotfix_sync`) o\n    pedile a Luis que lo haga explícitamente.\n\n24. **`cross_repo_search` vs `search_rag`**: `cross_repo_search` usa\n    `git grep` en vivo contra los working trees. `search_rag` usa el\n    índice de Sourcebot (más rápido pero puede estar desactualizado).\n    Usar `cross_repo_search` cuando el agente sospecha que el código\n    cambió desde la última indexación de Sourcebot.\n\n25. **`detect_circuit_from_path`** es la única forma válida de saber a qué\n    circuito pertenece un path desde el circuito `libre`. Si devuelve\n    `circuit: null`, NO asumir; pedir credenciales a Luis.\n\n26. **Tests del circuito `backend` se corren contra**:\n    - `tests/test_<módulo>.py` para test focalizado.\n    - Suite completa vía `run_pytest(circuit=\"backend\")` antes de commit\n      que toque múltiples módulos.\n    - NO usar `pytest` directo desde el shell — siempre vía `run_pytest`\n      (registra en Ponytail y respeta timeouts).\n\n27. **Validación de sintaxis en archivos fuera del workspace del circuito\n    activo**: si el agente está en `libre` y necesita editar un archivo\n    en `backend`, primero debe detectar el circuito (`detect_circuit_from_path`)\n    y luego pedir a Luis que opere en el circuito correcto. NO ejecutar\n    `validate_python_syntax` desde `libre` sobre paths de otros\n    circuitos — eso es trabajo del circuito destino.\n\n# Rules MCP\n\n1. Usar solo tools registradas por el backend.\n2. No inventar nombres de tools ni schemas.\n3. Validar argumentos antes de ejecutar mutaciones.\n4. Respetar allowlists de paths y visibilidades.\n\n---\n\n## get_config\n\n{\n  \"server\": {\n    \"host\": \"0.0.0.0\",\n    \"port\": 9001,\n    \"reload\": false\n  },\n  \"llm_emulation\": {\n    \"enabled\": true,\n    \"default_model\": \"conti-default\",\n    \"streaming_enabled\": true,\n    \"mode\": \"nanobot_serve\",\n    \"serve_profile\": \"conti-llm-serve\",\n    \"serve_base_url\": \"http://127.0.0.1:8765\"\n  },\n  \"providers\": {\n    \"active\": \"openai_compatible\",\n    \"openai_compatible\": {\n      \"api_base\": \"${OPENAI_BASE_URL}\",\n      \"api_key_env\": \"***REDACTED***\"\n    }\n  },\n  \"paths\": {\n    \"home_root\": \"/home/nanobot\",\n    \"development_repo\": \"/desarrollo\",\n    \"production_repo\": \"/compose\",\n    \"onboarding_file\": \"/app/docs/onboarding.md\",\n    \"onboarding_brief_file\": \"/app/docs/onboarding_brief.md\",\n    \"rules_file\": \"/app/docs/rules.md\"\n  },\n  \"ui\": {\n    \"enabled\": true,\n    \"title\": \"Conti MCP Console\"\n  },\n  \"rag\": {\n    \"base_url\": \"http://flamehaven:8000\",\n    \"api_key_env\": \"***REDACTED***\",\n    \"default_store\": \"default\"\n  },\n  \"odoo\": {\n    \"default_connection\": \"prod\",\n    \"default_lang\": \"es_AR\",\n    \"default_tz\": \"America/Argentina/Buenos_Aires\",\n    \"connect_timeout_seconds\": 30,\n    \"max_retries\": 3,\n    \"ocr_enabled\": true,\n    \"payment_proof_max_mb\": 1,\n    \"connections\": {\n      \"prod\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"demo\",\n        \"host_header\": \"demo.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"dev\": {\n        \"url\": \"http://odoo18_dev:8069\",\n        \"db\": \"demo\",\n        \"host_header\": null,\n        \"username_env\": \"ODOO_DEV_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_DEV_USER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"resto\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"resto\",\n        \"host_header\": \"resto.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"resto\",\n        \"default_password\": \"***REDACTED***\"\n      }\n    }\n  },\n  \"mercadopago\": {\n    \"access_token_env\": \"***REDACTED***\",\n    \"public_key_env\": \"***REDACTED***\",\n    \"sandbox_env\": \"MERCADOPAGO_SANDBOX\",\n    \"api_base_url\": \"https://api.mercadopago.com\",\n    \"success_url\": \"http://localhost:9001/odoo/mercadopago/success\",\n    \"failure_url\": \"http://localhost:9001/odoo/mercadopago/failure\",\n    \"pending_url\": \"http://localhost:9001/odoo/mercadopago/pending\",\n    \"notification_url\": \"http://localhost:9001/odoo/mercadopago/webhook\",\n    \"request_timeout_seconds\": 30\n  },\n  \"ocrl_sheet\": {\n    \"sheet_id\": \"1x3I9EvplbIk4q-To0BBjdUdKJyoOYUWzVgo_MwC2z7k\",\n    \"gid\": 0,\n    \"account_sheet_prefix\": \"CL\",\n    \"credentials_env\": \"OCRL_SHEET_CREDENTIALS_JSON\",\n    \"request_timeout_seconds\": 30\n  }\n}\n\n---\n\n# Circuit: backend\nWorkspace: /contenedores/conti-backend\n\n\n---\n\n# Búsqueda de código\n\nTenés acceso a codebase-memory-mcp como MCP server.\nHerramientas: search_graph, get_architecture, trace_path, get_code_snippet, query_graph.\nProjects indexados: desarrollo (153K nodos), compose (134K), contenedores-conti-backend (4.4K).\n\n\n---\n\n# User Task\n\n---\n\nAnaliza el endpoint /mcp del contenedor conti-backend y documenta todas las tools en un documento mcp_tools_doc.md",
+        "governance_context": "## get_rules\n\n# Rules — Conti Backend (actualizado PLAN_3 v1.5, 30/jun/2026)\n\n## Reglas de vida o muerte\n\n1. NUNCA ejecutar `git commit`, `git push`, `git merge`, `git reset`,\n   `git rebase` directo en el shell del agente.\n   Solo usar las tools dedicadas: `run_salvar` (preview), `run_promover`\n   (preview), `run_hotfix_sync` (preview). Estas pasan por el Gatekeeper\n   (`validate_diff`) antes de aplicar.\n\n2. NUNCA ejecutar `bash /compose/3-despliegue.sh` ni\n   `docker compose -f producion.yml up -d`. Solo Luis puede deployar.\n\n3. Toda acción destructiva → preview + confirmación explícita (`confirm=true`).\n\n4. Idioma: siempre Español.\n\n5. `/compose` es RW SOLO para git (commit/push en main, git pull desde\n   origin). Cambios de código en producción normalmente van por el flujo\n   develop → main. Edición directa en `/compose` solo se permite para\n   hotfixes urgentes.\n\n## Reglas operacionales\n\n6. Operar DENTRO del contenedor, sin SSH (los bind-mounts ya conectan el\n   host con el working dir del agente).\n\n7. Si la tarea accede a algo FUERA de `/desarrollo`, `/compose`,\n   `/contenedores/conti-backend`, `/home/nanobot`: pedir credenciales a\n   Luis explícitamente antes de proceder.\n\n8. Acción sobre palabras: nada de \"¡Gran pregunta!\", \"¡Excelente!\", etc.\n   Respuestas técnicas, directas y concisas.\n\n9. Si Luis modificó archivos en `/compose` directamente, avisar del\n   riesgo antes de cualquier operación: `3-despliegue.sh` puede hacer\n   `git reset --hard` y borrar archivos uncommitted.\n\n## Reglas MCP\n\n10. Usar solo tools registradas por el backend (`get_rules`, `get_config`,\n    `get_onboarding` las lista).\n11. No inventar nombres de tools ni schemas.\n12. Validar argumentos antes de ejecutar mutaciones.\n13. Respetar allowlists de paths y visibilidades del circuito activo.\n\n## Reglas de los 4 circuitos\n\n14. `circuit: desarrollo` (workspace `/desarrollo`, branch `develop`):\n    - `run_salvar` commitea y pushea a develop.\n    - `run_promover` y `run_hotfix_sync` NO aplican acá.\n    - Code editing: editar solo dentro de `/desarrollo`. Validar con\n      `validate_python_syntax` y opcionalmente `run_pytest`.\n    - **Trazas de Ponytail**: Se guardan en `/desarrollo/.ponytail/traces/`\n      con formato `YYYY-MM-DD_desarrollo_tr-<hash>.md`.\n\n15. `circuit: produccion` (workspace operativo `/desarrollo`, branch\n    `develop` para promover; `/compose` para hotfix en main):\n    - `run_promover` fusiona develop → main (merge --no-ff) + push main.\n    - `run_hotfix_sync` commitea cambios en `/compose` (main) y los\n      sincroniza a `/desarrollo` (develop) via merge --no-ff.\n    - NO corre `3-despliegue.sh` (solo Luis).\n    - El deploy real lo hace Luis fuera del agente.\n    - Code editing: editar solo dentro de `/compose` (para hotfix) o\n      `/desarrollo` (vía `run_promover` después). NO editar código\n      en `/compose` para cambios normales — usar flujo develop→main.\n    - **Trazas de Ponytail**:\n      - Si el usuario edita archivos directamente en `/compose`, las trazas\n        se guardan en `/compose/.ponytail/traces/` (rama `main`).\n      - Si el usuario trabaja en `/desarrollo` y promueve a `main`, las trazas\n        se guardan en `/desarrollo/.ponytail/traces/` (rama `develop`).\n\n16. `circuit: backend` (workspace `/contenedores/conti-backend`, branch\n    `main`):\n    - `run_salvar` commitea y pushea a main directamente (este repo solo\n      tiene main).\n    - `run_promover` y `run_hotfix_sync` NO aplican.\n    - **Code editing OBLIGATORIO pre-commit**:\n      1. `validate_python_syntax(paths=[<archivos>])` → debe pasar.\n      2. `run_pytest(circuit=\"backend\", test_path=<módulo_afectado>)` →\n         debe pasar.\n      3. (Opcional pero recomendado) `run_pytest(circuit=\"backend\")` →\n         suite completa verde.\n    - Si validate_python_syntax falla → NO commitear, arreglar primero.\n    - Si run_pytest falla → NO commitear, arreglar primero.\n    - **Trazas de Ponytail**: Se guardan en `/contenedores/conti-backend/.ponytail/traces/`\n      con formato `YYYY-MM-DD_backend_tr-<hash>.md`.\n\n17. `circuit: libre` (workspace `/tmp/free-agent`):\n    - SIN acceso a repos git. No tools nativas.\n    - Categorías MCP permitidas: bootstrap, rag, odoo, documents, sheets,\n      catolico, filesystem. **NO** tiene gitops, stack, code_edit.\n    - Si Luis pasa una ruta del host no bind-mounted, pedir credenciales.\n    - Si la tarea requiere editar código: usar `detect_circuit_from_path`\n      primero para saber a qué circuito mandar la edición, y pedirle a\n      Luis que la haga explícitamente en ese circuito.\n\n## Reglas del flujo hotfix sync (`run_hotfix_sync`)\n\n18. `run_hotfix_sync` requiere:\n    - `/compose` limpio, en rama `main`, con commits adelantados de\n      `origin/main` (los del hotfix).\n    - `/desarrollo` limpio, en rama `develop`.\n\n19. Si `/desarrollo` tiene commits locales no pusheados que conflictúan\n    con main, el merge aborta y reporta. NO forzar — pedir a Luis que\n    resuelva el conflicto manualmente.\n\n20. Orden obligatorio antes de cualquier deploy:\n    1) commit + push main en `/compose`\n    2) `run_hotfix_sync` (sincroniza main → develop)\n    3) deploy (solo Luis: `bash /compose/3-despliegue.sh`)\n    Si 3-despliegue.sh corre antes del paso 1, los cambios uncommitted\n    se pierden.\n\n21. Si el merge en `/desarrollo` resulta no-op (main ya está en develop),\n    el agente debe detectarlo y avisar en lugar de crear un merge commit\n    vacío.\n\n## Reglas de code editing por circuito (Sprint 1.5)\n\n22. **Pre-flight obligatorio antes de `run_salvar` en circuito `backend`**:\n    - `validate_python_syntax` debe devolver `all_ok: true`.\n    - `run_pytest` debe devolver `returncode: 0`.\n    - Si cualquiera falla, NO ejecutar `run_salvar`. Reportar el error a Luis.\n\n23. **Cross-circuit file movement**: nunca muevas archivos entre\n    `/desarrollo`, `/compose` y `/contenedores/conti-backend` con `cp`\n    o `mv` directo. Usá `git` (vía `run_salvar` + `run_hotfix_sync`) o\n    pedile a Luis que lo haga explícitamente.\n\n24. **`cross_repo_search` vs `search_rag`**: `cross_repo_search` usa\n    `git grep` en vivo contra los working trees. `search_rag` usa el\n    índice de Sourcebot (más rápido pero puede estar desactualizado).\n    Usar `cross_repo_search` cuando el agente sospecha que el código\n    cambió desde la última indexación de Sourcebot.\n\n25. **`detect_circuit_from_path`** es la única forma válida de saber a qué\n    circuito pertenece un path desde el circuito `libre`. Si devuelve\n    `circuit: null`, NO asumir; pedir credenciales a Luis.\n\n26. **Tests del circuito `backend` se corren contra**:\n    - `tests/test_<módulo>.py` para test focalizado.\n    - Suite completa vía `run_pytest(circuit=\"backend\")` antes de commit\n      que toque múltiples módulos.\n    - NO usar `pytest` directo desde el shell — siempre vía `run_pytest`\n      (registra en Ponytail y respeta timeouts).\n\n27. **Validación de sintaxis en archivos fuera del workspace del circuito\n    activo**: si el agente está en `libre` y necesita editar un archivo\n    en `backend`, primero debe detectar el circuito (`detect_circuit_from_path`)\n    y luego pedir a Luis que opere en el circuito correcto. NO ejecutar\n    `validate_python_syntax` desde `libre` sobre paths de otros\n    circuitos — eso es trabajo del circuito destino.\n\n# Rules MCP\n\n1. Usar solo tools registradas por el backend.\n2. No inventar nombres de tools ni schemas.\n3. Validar argumentos antes de ejecutar mutaciones.\n4. Respetar allowlists de paths y visibilidades.\n\n---\n\n## get_config\n\n{\n  \"server\": {\n    \"host\": \"0.0.0.0\",\n    \"port\": 9001,\n    \"reload\": false\n  },\n  \"llm_emulation\": {\n    \"enabled\": true,\n    \"default_model\": \"conti-default\",\n    \"streaming_enabled\": true,\n    \"mode\": \"nanobot_serve\",\n    \"serve_profile\": \"conti-llm-serve\",\n    \"serve_base_url\": \"http://127.0.0.1:8765\"\n  },\n  \"providers\": {\n    \"active\": \"openai_compatible\",\n    \"openai_compatible\": {\n      \"api_base\": \"${OPENAI_BASE_URL}\",\n      \"api_key_env\": \"***REDACTED***\"\n    }\n  },\n  \"paths\": {\n    \"home_root\": \"/home/nanobot\",\n    \"development_repo\": \"/desarrollo\",\n    \"production_repo\": \"/compose\",\n    \"onboarding_file\": \"/app/docs/onboarding.md\",\n    \"onboarding_brief_file\": \"/app/docs/onboarding_brief.md\",\n    \"rules_file\": \"/app/docs/rules.md\"\n  },\n  \"ui\": {\n    \"enabled\": true,\n    \"title\": \"Conti MCP Console\"\n  },\n  \"rag\": {\n    \"base_url\": \"http://flamehaven:8000\",\n    \"api_key_env\": \"***REDACTED***\",\n    \"default_store\": \"default\"\n  },\n  \"odoo\": {\n    \"default_connection\": \"prod\",\n    \"default_lang\": \"es_AR\",\n    \"default_tz\": \"America/Argentina/Buenos_Aires\",\n    \"connect_timeout_seconds\": 30,\n    \"max_retries\": 3,\n    \"ocr_enabled\": true,\n    \"payment_proof_max_mb\": 1,\n    \"connections\": {\n      \"prod\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"demo\",\n        \"host_header\": \"demo.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"dev\": {\n        \"url\": \"http://odoo18_dev:8069\",\n        \"db\": \"demo\",\n        \"host_header\": null,\n        \"username_env\": \"ODOO_DEV_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_DEV_USER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"resto\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"resto\",\n        \"host_header\": \"resto.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"resto\",\n        \"default_password\": \"***REDACTED***\"\n      }\n    }\n  },\n  \"mercadopago\": {\n    \"access_token_env\": \"***REDACTED***\",\n    \"public_key_env\": \"***REDACTED***\",\n    \"sandbox_env\": \"MERCADOPAGO_SANDBOX\",\n    \"api_base_url\": \"https://api.mercadopago.com\",\n    \"success_url\": \"http://localhost:9001/odoo/mercadopago/success\",\n    \"failure_url\": \"http://localhost:9001/odoo/mercadopago/failure\",\n    \"pending_url\": \"http://localhost:9001/odoo/mercadopago/pending\",\n    \"notification_url\": \"http://localhost:9001/odoo/mercadopago/webhook\",\n    \"request_timeout_seconds\": 30\n  },\n  \"ocrl_sheet\": {\n    \"sheet_id\": \"1x3I9EvplbIk4q-To0BBjdUdKJyoOYUWzVgo_MwC2z7k\",\n    \"gid\": 0,\n    \"account_sheet_prefix\": \"CL\",\n    \"credentials_env\": \"OCRL_SHEET_CREDENTIALS_JSON\",\n    \"request_timeout_seconds\": 30\n  }\n}",
+        "user_prompt": "Analiza el endpoint /mcp del contenedor conti-backend y documenta todas las tools en un documento mcp_tools_doc.md",
+        "inject_governance": true,
+        "governance_chars": 10773
+      }
+    },
+    {
+      "event": "goal_sent",
+      "ts": 1783196734.4221432,
+      "data": {
+        "conversation_id": "3514e5fa-063e-4c1c-b775-cfe8214b8b04",
+        "prompt_len": 11243
+      }
+    },
+    {
+      "event": "omp_execution_status",
+      "ts": 1783196767.6589282,
+      "data": {
+        "status": "running"
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783196773.7195969,
+      "data": {
+        "tool": "list_directory",
+        "args": {},
+        "reasoning": "El usuario me pide analizar el endpoint /mcp del contenedor conti-backend y documentar todas las tools en un documento mcp_tools_doc.md. Primero necesito explorar el repositorio para entender la estructura del proyecto. Estoy en /contenedores/conti-backend. Voy a listar el directorio para ver qué ha"
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783196773.7196074,
+      "data": {
+        "tool": "list_directory",
+        "result": "Listed directory: /contenedores/conti-backend (66 entries)",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783196773.7196157,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 562,
+        "completion_tokens": 1470,
+        "reasoning_tokens": 1461,
+        "cache_read_tokens": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783196773.7196193,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 13217,
+        "completion_tokens": 1587,
+        "reasoning_tokens": 1533,
+        "cache_read_tokens": 2048
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783196777.7512558,
+      "data": {
+        "tool": "glob",
+        "args": {},
+        "reasoning": "Voy a ver el contenido completo del directorio para entender la estructura. Parece haber muchos archivos. Necesito encontrar el endpoint /mcp. Probablemente sea un servidor FastAPI o similar. Voy a buscar archivos Python que contengan \"mcp\" o \"endpoint\". Primero, veamos los archivos en la raíz."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783196779.7651134,
+      "data": {
+        "tool": "glob",
+        "result": "Found 100 file(s) matching pattern '**/*.py' in '/contenedores/conti-backend':\n/contenedores/conti-backend/app/openhands_agent/open_hands_service.py\n/contenedores/conti-backend/app/tools/ponytail_trace_tools.py\n/contenedores/conti-backend/app/openhands_agent/service.py\n/contenedores/conti-backend/app/openhands_agent/omp_client.py\n/contenedores/conti-backend/app/openhands_agent/tcp_bridge.py\n/contenedores/conti-backend/docker/conti-omp/omp_proxy.py\n/contenedores/conti-backend/docker/conti-omp/omp_bridge.py\n/contenedores/conti-backend/app/openhands_agent/circuits.py\n/contenedores/conti-backend/app/llm_emulation/router.py\n/contenedores/conti-backend/app/tools/sourcebot_tools.py\n/contenedores/conti-backend/tests/test_circuit_backend.py\n/contenedores/conti-backend/tests/test_circuit_compose.py\n/contenedores/conti-backend/tests/test_circuit_desarrollo.py\n/contenedores/conti-backend/tests/test_ponytail_trace.py\n/contenedores/conti-backend/app/openhands_agent/circuit_locks.py\n/contenedores/con",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783196779.7651231,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 26016,
+        "completion_tokens": 1698,
+        "reasoning_tokens": 1605,
+        "cache_read_tokens": 14656
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783196783.8025208,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Necesito encontrar el endpoint /mcp. Probablemente sea un router de FastAPI. Voy a buscar archivos que contengan \"/mcp\" o \"mcp\" en su contenido. Primero, veamos el archivo principal de la aplicación."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783196783.802531,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /contenedores/conti-backend/app/web/router.py\n\n     1  from __future__ import annotations\n     2  \n     3  import json\n     4  from pathlib import Path\n     5  \n     6  from fastapi import APIRouter, Form, Request\n     7  from fastapi.responses import RedirectResponse\n     8  from fastapi.templating import Jinja2Templates\n     9  \n    10  from app.config.loader import load_config\n    11  from app.services.health_service import HealthService\n    12  from app.services.nanobot_config_service import nanobot_config_service\n    13  from app.services.nanobot_serve_service import nanobot_serve_service\n    14  from app.services.onboarding_service import OnboardingService\n    15  from app.services.registry_service import registry_service\n    16  from app.services.rules_service import RulesService\n    17  from app.tools import git_tools\n    18  \n    19  \n    20  WEB_DIR = Path(__file__).resolve().parent\n    21  templates = Jinja2Templates(directory=str(WEB_DIR / \"templates\"))\n    22  r",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783196783.8025403,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 40603,
+        "completion_tokens": 1795,
+        "reasoning_tokens": 1658,
+        "cache_read_tokens": 27392
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783196787.8378088,
+      "data": {
+        "tool": "grep",
+        "args": {},
+        "reasoning": "Necesito buscar el endpoint /mcp. Probablemente sea en otro archivo. Voy a buscar en todo el proyecto por \"/mcp\"."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783196818.161155,
+      "data": {
+        "tool": "grep",
+        "result": "Command '['grep', '-R', '-I', '-l', '-i', '/mcp', '/contenedores/conti-backend']' timed out after 30 seconds",
+        "ok": false,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783196818.1611633,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 57780,
+        "completion_tokens": 1866,
+        "reasoning_tokens": 1689,
+        "cache_read_tokens": 41920
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783196824.2463398,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "find /contenedores/conti-backend -type f -name \"*.py\" -exec grep -l \"mcp\" {} \\;"
+        },
+        "reasoning": "Voy a usar find y grep más específicamente. Primero, busquemos archivos Python que contengan \"mcp\" en su contenido."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783197312.418102,
+      "data": {
+        "tool": "terminal",
+        "result": "find /contenedores/conti-backend -type f -name \"*.py\" -exec grep -l \"mcp\" {} \\;\n/contenedores/conti-backend/conti_home/.npm-global/lib/node_modules/@openhands/agent-canvas/node_modules/@openhands/extensions/skills/github-repo-monitor/scripts/main.py\n/contenedores/conti-backend/conti_home/.npm-global/lib/node_modules/@openhands/agent-canvas/node_modules/@openhands/extensions/skills/github-pr-reviewer/scripts/main.py\n/contenedores/conti-backend/conti_home/.npm-global/lib/node_modules/@openhands/agent-canvas/node_modules/@openhands/extensions/skills/slack-channel-monitor/scripts/main.py\n/contenedores/conti-backend/conti_home/.npm-global/lib/node_modules/@openhands/agent-canvas/node_modules/@openhands/extensions/tests/test_catalogs.py\n/contenedores/conti-backend/conti_home/.openhands/cache/skills/public-skills/skills/github-repo-monitor/scripts/main.py\n/contenedores/conti-backend/conti_home/.openhands/cache/skills/public-skills/skills/github-pr-reviewer/scripts/main.py\n/contenedores/conti-",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783197312.4181125,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 75084,
+        "completion_tokens": 1962,
+        "reasoning_tokens": 1719,
+        "cache_read_tokens": 59072
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783197318.4782784,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Veo que hay un archivo `/contenedores/conti-backend/app/mcp/router.py`. Ese probablemente sea el endpoint MCP. También hay `/contenedores/conti-backend/app/main.py`. Primero veamos el main.py para ver cómo se configura la aplicación."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783197318.4782991,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /contenedores/conti-backend/app/main.py\n\n     1  from __future__ import annotations\n     2  \n     3  from fastapi import FastAPI\n     4  from fastapi import Query\n     5  from fastapi.staticfiles import StaticFiles\n     6  \n     7  from app.chat.router import router as chat_router\n     8  from app.config.loader import load_config, reload_config\n     9  from app.integrations.mercadopago_router import router as mercadopago_router\n    10  from app.llm_emulation.router import router as llm_router\n    11  from app.mcp.router import router as mcp_router\n    12  from app.openhands_agent.router import router as openhands_router\n    13  from app.services.health_service import HealthService\n    14  from app.services.onboarding_service import OnboardingService\n    15  from app.services.rules_service import RulesService\n    16  from app.utils.logging import add_request_id, configure_logging\n    17  from app.web.router import WEB_DIR, router as web_router\n    18  \n    19  configure_loggi",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783197318.4783077,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 101121,
+        "completion_tokens": 2064,
+        "reasoning_tokens": 1776,
+        "cache_read_tokens": 76352
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783197322.5167875,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Ahora veamos el router MCP."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783197322.5168085,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /contenedores/conti-backend/app/mcp/router.py\n\n     1  from __future__ import annotations\n     2  \n     3  import asyncio\n     4  import json\n     5  from typing import Any\n     6  from uuid import uuid4\n     7  \n     8  from fastapi import APIRouter, HTTPException, Request\n     9  from fastapi.responses import JSONResponse, StreamingResponse\n    10  from pydantic import BaseModel, Field\n    11  \n    12  from app.core.tool_models import ToolCallResponse\n    13  from app.mcp.schemas import MCPCallRequest\n    14  from app.services.registry_service import registry_service\n    15  \n    16  \n    17  router = APIRouter(prefix=\"/mcp\", tags=[\"mcp\"])\n    18  \n    19  \n    20  # --- Modelos de Respuesta para Swagger ---\n    21  class MCPRootResponse(BaseModel):\n    22      status: str = Field(default=\"ok\")\n    23      transport: str = Field(..., description=\"Transporte utilizado (ej. http-json+sse)\")\n    24      compatible_with: list[str] = Field(..., description=\"Lista de clientes co",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783197322.5168154,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 128547,
+        "completion_tokens": 2117,
+        "reasoning_tokens": 1784,
+        "cache_read_tokens": 102336
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783197326.5611265,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Ahora necesito ver qué tools están registradas. Parece que hay un `registry_service` que lista las tools. Necesito explorar ese servicio para entender qué tools están disponibles. Primero, veamos el archivo del registry_service."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783197326.5611506,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /contenedores/conti-backend/app/services/registry_service.py (showing lines 1-1000 of 1738) To read more, use: read_file(file_path='/contenedores/conti-backend/app/services/registry_service.py', offset=1000, limit=1000)\n\n     1  from __future__ import annotations\n     2  \n     3  from functools import lru_cache\n     4  \n     5  from app.config.loader import load_config\n     6  from app.core import categories, visibility\n     7  from app.core.tool_models import ToolDefinition\n     8  from app.core.tool_registry import ToolRegistry\n     9  from app.tools import (\n    10      catolico_tools,\n    11      code_edit_tools,\n    12      config_tools,\n    13      container_tools,\n    14      document_tools,\n    15      filesystem,\n    16      git_tools,\n    17      odoo_tools,\n    18      ponytail_trace_tools,\n    19      rag_search_tools,\n    20      rag_tools,\n    21      search_literal,\n    22      sheet_tools,\n    23      sourcebot_tools,\n    24      system_status,\n    25      tr",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783197326.561158,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 160033,
+        "completion_tokens": 2216,
+        "reasoning_tokens": 1834,
+        "cache_read_tokens": 129728
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783197330.6090944,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "grep -n \"name=\" /contenedores/conti-backend/app/services/registry_service.py | head -100"
+        },
+        "reasoning": "El archivo es muy largo. Necesito ver las herramientas registradas de manera más eficiente. Tal vez puedo buscar en el archivo completo. Voy a usar grep para buscar \"register\" en el archivo."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783197330.609112,
+      "data": {
+        "tool": "terminal",
+        "result": "37:                name=\"list_files\",\n51:                name=\"read_file\",\n70:                name=\"file_exists\",\n85:                name=\"get_code_context\",\n104:                name=\"search_code_literal\",\n119:                name=\"search_docs_literal\",\n134:                name=\"grep_workspace\",\n149:                name=\"health_check\",\n160:                name=\"get_config\",\n171:                name=\"reload_config\",\n182:                name=\"get_onboarding\",\n196:                name=\"get_rules\",\n207:                name=\"odoo_test_connection\",\n230:                name=\"odoo_list_products\",\n265:                name=\"odoo_get_product_detail\",\n284:                name=\"odoo_get_ai_context\",\n302:                name=\"odoo_search_clients\",\n323:                name=\"odoo_list_clients\",\n344:                name=\"odoo_create_client\",\n366:                name=\"odoo_create_order\",\n385:                name=\"odoo_create_cart\",\n404:                name=\"odoo_add_item_to_cart\",\n425:                na",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783197330.6091216,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 203940,
+        "completion_tokens": 2321,
+        "reasoning_tokens": 1877,
+        "cache_read_tokens": 161152
+      }
+    },
+    {
+      "event": "openhands_orchestrator_end",
+      "ts": 1783197334.6471071,
+      "data": {
+        "conversation_id": "3514e5fa-063e-4c1c-b775-cfe8214b8b04",
+        "response_len": 3485,
+        "status": "ok"
+      }
+    },
+    {
+      "event": "end",
+      "ts": 1783197334.6473484,
+      "data": {
+        "duration_s": 630.683
+      }
+    }
+  ]
+}

@@ -136,12 +136,55 @@ AGENT_SERVER_PID=$!
 # ── OpenHands Agent Canvas (GUI web oficial) ─────────────────────────
 # Paquete npm `@openhands/agent-canvas`. Es la GUI web completa de OpenHands
 # (la que se ve en github.com/OpenHands/OpenHands). Conecta a nuestro
-# agent-server local en :3000 vía `AGENT_SERVER_URL`.
-echo "🌐 OpenHands Agent Canvas en :3012"
-nohup agent-canvas \
-    --host 0.0.0.0 --port 3012 \
-    > "$LOG_DIR/agent_canvas.log" 2>&1 &
+# agent-server local en :3000 vía ingress que redirige /api a :3000.
+# IMPORTANTE: NO usar `agent-canvas` directamente porque arranca su propio
+# agent-server en :18000 y el ingress apunta a ese puerto en vez de :3000.
+# En su lugar, arrancamos solo el ingress + static-server apuntando a :3000.
+echo "🌐 OpenHands Agent Canvas (GUI) en :3012"
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
+
+# Static server para servir los archivos del frontend
+nohup node /usr/local/lib/node_modules/@openhands/agent-canvas/scripts/static-server.mjs \
+    --dir /usr/local/lib/node_modules/@openhands/agent-canvas/build \
+    --port 3001 \
+    --route "/api=http://localhost:3000" \
+    --route "/sockets=http://localhost:3000" \
+    --route "/server_info=http://localhost:3000" \
+    --route "/health=http://localhost:3000" \
+    --route "/ready=http://localhost:3000" \
+    --route "/alive=http://localhost:3000" \
+    --route "/docs=http://localhost:3000" \
+    --route "/redoc=http://localhost:3000" \
+    --route "/openapi.json=http://localhost:3000" \
+    > "$LOG_DIR/static_server.log" 2>&1 &
+
+# Ingress proxy: redirige /api → :3000 (agent-server), /* → :3001 (static)
+nohup node /usr/local/lib/node_modules/@openhands/agent-canvas/scripts/ingress.mjs \
+    --port 3012 \
+    --route "/api/automation=http://localhost:18001" \
+    --route "/api=http://localhost:3000" \
+    --route "/sockets=http://localhost:3000" \
+    --route "/server_info=http://localhost:3000" \
+    --route "/health=http://localhost:3000" \
+    --route "/ready=http://localhost:3000" \
+    --route "/alive=http://localhost:3000" \
+    --route "/docs=http://localhost:3000" \
+    --route "/redoc=http://localhost:3000" \
+    --route "/openapi.json=http://localhost:3000" \
+    --default http://localhost:3001 \
+    > "$LOG_DIR/ingress.log" 2>&1 &
 AGENT_CANVAS_PID=$!
+
+# ── OpenHands CLI textual embebido en web (frontend Textual) ─────────
+# Es la GUI textual oficial de OpenHands (`openhands web`), servida por
+# aiohttp. Estilo terminal embebido en HTML. NO necesita Docker daemon
+# (corre in-process con el CLI). Coexiste con agent-canvas: agent-canvas
+# es la GUI visual completa, openhands web es la vista estilo CLI.
+echo "💻 OpenHands CLI Web en :3001"
+OPENHANDS_SUPPRESS_BANNER=1 nohup uv run --with openhands openhands web \
+    --host 0.0.0.0 --port 3001 \
+    > "$LOG_DIR/openhands_web.log" 2>&1 &
+OPENHANDS_WEB_PID=$!
 
 # ────────────────────────────────────────────────────────────────────
 
@@ -150,6 +193,7 @@ echo "  FastAPI              :${BACKEND_PORT}    PID=$FASTAPI_PID"
 echo "  Hermes default       :Telegram (contihome) PID=$HERMES_GW_PID"
 echo "  OpenHands Agent API  :3000      PID=$AGENT_SERVER_PID"
 echo "  OpenHands Agent Canvas :3012    PID=$AGENT_CANVAS_PID"
+echo "  OpenHands CLI Web    :3001      PID=$OPENHANDS_WEB_PID"
 echo "  Hermes católico :8766  (API Server)"
 echo "  Hermes resto    :8767  (API Server)"
 echo "  Hermes odoo     :8768  (API Server - ERP multi-tenant)"

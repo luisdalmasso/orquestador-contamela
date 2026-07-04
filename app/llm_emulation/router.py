@@ -29,8 +29,22 @@ def get_v1_root() -> dict:
 
 @router.get("/v1/models")
 def get_models() -> dict:
+    """Devuelve el modelo configurado internamente (ignorando cualquier request)."""
     try:
-        return openhands_service.list_models()
+        # Obtener el modelo configurado internamente
+        models = openhands_service.list_models()
+        # Forzar el modelo configurado (ej: mistral-small-latest)
+        return {
+            "object": "list",
+            "data": [
+                {
+                    "id": models.get("default_model", "mistral-small-latest"),
+                    "object": "model",
+                    "created": 1700000000,
+                    "owned_by": "conti-backend",
+                }
+            ],
+        }
     except Exception as exc:
         log.error("[ROUTER] Error listando modelos OpenHands: %s", exc, exc_info=True)
         raise HTTPException(
@@ -44,6 +58,28 @@ async def post_chat_completions(request: Request):
         body = await request.json()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Cuerpo JSON inválido: {exc}")
+
+    # Ignorar el campo 'model' en la request y usar el modelo configurado internamente
+    if "model" in body:
+        log.warning(
+            "[ROUTER] Campo 'model' ignorado. Usando modelo configurado internamente."
+        )
+        body.pop("model")
+
+    # Leer el circuito desde el header HTTP (X-Circuit-ID)
+    circuit = request.headers.get("X-Circuit-ID", "libre")  # Default: libre
+    body["circuit"] = circuit
+
+    # Session management: X-Session-ID header
+    # Si el cliente envía un session_id, se reutiliza la misma sesión omp.
+    # Si no se envía, se genera uno nuevo (nueva sesión).
+    session_id = request.headers.get("X-Session-ID")
+    if session_id:
+        body["session_id"] = session_id
+        log.info("[ROUTER] session_id=%s (reutilizando sesión)", session_id)
+    else:
+        # No hay session_id → es el primer mensaje de una nueva sesión
+        log.info("[ROUTER] sin session_id → nueva sesión")
 
     auth_header = request.headers.get("Authorization", "")
 
