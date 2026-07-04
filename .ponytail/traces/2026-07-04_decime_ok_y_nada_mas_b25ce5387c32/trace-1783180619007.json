@@ -1,0 +1,92 @@
+{
+  "task_id": "trace-1783180619007",
+  "task_name": "Decime OK y nada mas",
+  "circuit": "backend",
+  "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-04_decime_ok_y_nada_mas_b25ce5387c32",
+  "started_at": 1783180619.007607,
+  "ended_at": 1783180619.1728082,
+  "events": [
+    {
+      "event": "start",
+      "ts": 1783180619.0079038,
+      "data": {
+        "task": "Decime OK y nada mas",
+        "payload_keys": [
+          "messages",
+          "circuit",
+          "_circuit",
+          "_session"
+        ],
+        "circuit": "backend",
+        "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-04_decime_ok_y_nada_mas_b25ce5387c32"
+      }
+    },
+    {
+      "event": "circuit_selected",
+      "ts": 1783180619.009738,
+      "data": {
+        "id": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "session_id": "b25ce5387c32",
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783180619.011328,
+      "data": {
+        "tool": "get_onboarding",
+        "error": "' (f)<-'"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783180619.0130682,
+      "data": {
+        "tool": "get_rules",
+        "chars": 7492
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783180619.015196,
+      "data": {
+        "tool": "get_config",
+        "chars": 3246
+      }
+    },
+    {
+      "event": "governance_injected",
+      "ts": 1783180619.0152233,
+      "data": {
+        "onboarding_len": 10773,
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "openhands_orchestrator_start",
+      "ts": 1783180619.0465503,
+      "data": {
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "is_new_session": false,
+        "prompt_len": 20,
+        "governance_len": 10773
+      }
+    },
+    {
+      "event": "error",
+      "ts": 1783180619.1699712,
+      "data": {
+        "exception": "Client error '401 Unauthorized' for url 'http://127.0.0.1:18000/api/conversations'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401"
+      }
+    },
+    {
+      "event": "end",
+      "ts": 1783180619.1701472,
+      "data": {
+        "duration_s": 0.163
+      }
+    }
+  ]
+}

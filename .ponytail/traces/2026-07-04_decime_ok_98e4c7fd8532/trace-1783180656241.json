@@ -1,0 +1,92 @@
+{
+  "task_id": "trace-1783180656241",
+  "task_name": "Decime OK",
+  "circuit": "backend",
+  "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-04_decime_ok_98e4c7fd8532",
+  "started_at": 1783180656.241555,
+  "ended_at": 1783180656.41257,
+  "events": [
+    {
+      "event": "start",
+      "ts": 1783180656.2418203,
+      "data": {
+        "task": "Decime OK",
+        "payload_keys": [
+          "messages",
+          "circuit",
+          "_circuit",
+          "_session"
+        ],
+        "circuit": "backend",
+        "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-04_decime_ok_98e4c7fd8532"
+      }
+    },
+    {
+      "event": "circuit_selected",
+      "ts": 1783180656.243437,
+      "data": {
+        "id": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "session_id": "98e4c7fd8532",
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783180656.2449422,
+      "data": {
+        "tool": "get_onboarding",
+        "error": "' (f)<-'"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783180656.2467823,
+      "data": {
+        "tool": "get_rules",
+        "chars": 7492
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783180656.248892,
+      "data": {
+        "tool": "get_config",
+        "chars": 3246
+      }
+    },
+    {
+      "event": "governance_injected",
+      "ts": 1783180656.248908,
+      "data": {
+        "onboarding_len": 10773,
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "openhands_orchestrator_start",
+      "ts": 1783180656.2794282,
+      "data": {
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "is_new_session": false,
+        "prompt_len": 9,
+        "governance_len": 10773
+      }
+    },
+    {
+      "event": "error",
+      "ts": 1783180656.409739,
+      "data": {
+        "exception": "Client error '401 Unauthorized' for url 'http://127.0.0.1:18000/api/conversations'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401"
+      }
+    },
+    {
+      "event": "end",
+      "ts": 1783180656.4099257,
+      "data": {
+        "duration_s": 0.168
+      }
+    }
+  ]
+}
