@@ -1,0 +1,53 @@
+{
+  "task_id": "trace-1783005823113",
+  "task_name": "Analiza el endpoint /mcp del contenedor conti-backend y documenta todas las tool",
+  "circuit": "backend",
+  "traces_dir": "/contenedores/conti-backend/.ponytail/traces",
+  "started_at": 1783005823.1130197,
+  "ended_at": 1783005823.1364324,
+  "events": [
+    {
+      "event": "start",
+      "ts": 1783005823.1130767,
+      "data": {
+        "task": "Analiza el endpoint /mcp del contenedor conti-backend y documenta todas las tool",
+        "payload_keys": [
+          "messages",
+          "circuit",
+          "_circuit"
+        ],
+        "circuit": "backend",
+        "traces_dir": "/contenedores/conti-backend/.ponytail/traces"
+      }
+    },
+    {
+      "event": "circuit_selected",
+      "ts": 1783005823.1130793,
+      "data": {
+        "id": "backend",
+        "workspace": "/contenedores/conti-backend"
+      }
+    },
+    {
+      "event": "sourcebot_search",
+      "ts": 1783005823.1362083,
+      "data": {
+        "hits": 0
+      }
+    },
+    {
+      "event": "error",
+      "ts": 1783005823.1362221,
+      "data": {
+        "reason": "openhands_sdk_unavailable"
+      }
+    },
+    {
+      "event": "end",
+      "ts": 1783005823.1362572,
+      "data": {
+        "duration_s": 0.023
+      }
+    }
+  ]
+}
