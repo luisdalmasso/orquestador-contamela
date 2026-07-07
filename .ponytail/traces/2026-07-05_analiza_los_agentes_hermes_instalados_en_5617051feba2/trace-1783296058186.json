@@ -1,0 +1,95 @@
+{
+  "task_id": "trace-1783296058186",
+  "task_name": "Analiza los Agentes Hermes Instalados en este contenedor y genera un reporte de sus configuraciones y habilidades en un archivo /contenedores/conti-backend/Agentes_hermes_doc.md",
+  "circuit": "backend",
+  "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-05_analiza_los_agentes_hermes_instalados_en_5617051feba2",
+  "started_at": 1783296058.1866221,
+  "ended_at": 1783296180.960465,
+  "events": [
+    {
+      "event": "start",
+      "ts": 1783296058.1894386,
+      "data": {
+        "task": "Analiza los Agentes Hermes Instalados en este contenedor y genera un reporte de sus configuraciones y habilidades en un archivo /contenedores/conti-backend/Agentes_hermes_doc.md",
+        "payload_keys": [
+          "messages",
+          "circuit",
+          "_circuit",
+          "_session"
+        ],
+        "circuit": "backend",
+        "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-05_analiza_los_agentes_hermes_instalados_en_5617051feba2"
+      }
+    },
+    {
+      "event": "circuit_selected",
+      "ts": 1783296058.212318,
+      "data": {
+        "id": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "session_id": "5617051feba2",
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783296058.2130911,
+      "data": {
+        "tool": "ponytail_rules",
+        "chars": 2600
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783296058.3733165,
+      "data": {
+        "tool": "get_onboarding",
+        "error": "' (f)<-'"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783296058.443437,
+      "data": {
+        "tool": "get_rules",
+        "chars": 2534,
+        "circuit": "backend"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783296058.4810798,
+      "data": {
+        "tool": "get_config",
+        "chars": 3246
+      }
+    },
+    {
+      "event": "governance_injected",
+      "ts": 1783296058.4811115,
+      "data": {
+        "onboarding_len": 8496,
+        "is_new_session": true,
+        "circuit": "backend"
+      }
+    },
+    {
+      "event": "openhands_orchestrator_start",
+      "ts": 1783296058.9262547,
+      "data": {
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "is_new_session": true,
+        "prompt_len": 177,
+        "governance_len": 8496
+      }
+    },
+    {
+      "event": "end",
+      "ts": 1783296180.9562757,
+      "data": {
+        "duration_s": 122.77
+      }
+    }
+  ]
+}

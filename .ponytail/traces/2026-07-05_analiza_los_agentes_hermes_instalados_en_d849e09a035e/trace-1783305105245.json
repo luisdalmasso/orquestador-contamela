@@ -1,0 +1,612 @@
+{
+  "task_id": "trace-1783305105245",
+  "task_name": "Analiza los Agentes Hermes Instalados en este contenedor y genera un reporte de sus configuraciones y habilidades en un archivo /contenedores/conti-backend/Agentes_hermes_doc.md",
+  "circuit": "backend",
+  "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-05_analiza_los_agentes_hermes_instalados_en_d849e09a035e",
+  "started_at": 1783305105.2456286,
+  "ended_at": 1783305707.2721713,
+  "events": [
+    {
+      "event": "start",
+      "ts": 1783305105.2470386,
+      "data": {
+        "task": "Analiza los Agentes Hermes Instalados en este contenedor y genera un reporte de sus configuraciones y habilidades en un archivo /contenedores/conti-backend/Agentes_hermes_doc.md",
+        "payload_keys": [
+          "messages",
+          "circuit",
+          "_circuit",
+          "_session"
+        ],
+        "circuit": "backend",
+        "traces_dir": "/contenedores/conti-backend/.ponytail/traces/2026-07-05_analiza_los_agentes_hermes_instalados_en_d849e09a035e"
+      }
+    },
+    {
+      "event": "circuit_selected",
+      "ts": 1783305105.2494717,
+      "data": {
+        "id": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "session_id": "d849e09a035e",
+        "is_new_session": true
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783305105.249491,
+      "data": {
+        "tool": "ponytail_rules",
+        "chars": 2600
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783305105.25975,
+      "data": {
+        "tool": "get_onboarding",
+        "chars": 14278,
+        "circuit": "backend"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783305105.2651067,
+      "data": {
+        "tool": "get_rules",
+        "chars": 2534,
+        "circuit": "backend"
+      }
+    },
+    {
+      "event": "governance_tool",
+      "ts": 1783305105.2678733,
+      "data": {
+        "tool": "get_config",
+        "chars": 3246
+      }
+    },
+    {
+      "event": "governance_injected",
+      "ts": 1783305105.2679062,
+      "data": {
+        "onboarding_len": 22816,
+        "is_new_session": true,
+        "circuit": "backend"
+      }
+    },
+    {
+      "event": "openhands_orchestrator_start",
+      "ts": 1783305105.3052206,
+      "data": {
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend",
+        "is_new_session": true,
+        "prompt_len": 177,
+        "governance_len": 22816
+      }
+    },
+    {
+      "event": "conversation_created",
+      "ts": 1783305105.3645957,
+      "data": {
+        "conversation_id": "8d2ee6cf-d08e-4ce7-be12-da185af73936",
+        "workspace": "/contenedores/conti-backend"
+      }
+    },
+    {
+      "event": "system_prompt",
+      "ts": 1783305105.3646197,
+      "data": {
+        "length": 23349,
+        "is_new_session": true,
+        "governance_chars": 22816,
+        "circuit": "backend",
+        "workspace": "/contenedores/conti-backend"
+      }
+    },
+    {
+      "event": "prompt_injected",
+      "ts": 1783305105.3646219,
+      "data": {
+        "prompt_full": "## Ponytail Rules (Reglas Comunes)\n\n\n---\n\n# Ponytail, lazy senior dev mode\n\nYou are a lazy senior developer. Lazy means efficient, not careless. The best code is the code never written.\n\nBefore writing any code, stop at the first rung that holds:\n\n1. Does this need to be built at all? (YAGNI)\n2. Does it already exist in this codebase? Reuse the helper, util, or pattern that's already here, don't re-write it.\n3. Does the standard library already do this? Use it.\n4. Does a native platform feature cover it? Use it.\n5. Does an already-installed dependency solve it? Use it.\n6. Can this be one line? Make it one line.\n7. Only then: write the minimum code that works.\n\nThe ladder runs after you understand the problem, not instead of it: read the task and the code it touches, trace the real flow end to end, then climb.\n\nBug fix = root cause, not symptom: a report names a symptom. Grep every caller of the function you touch and fix the shared function once — one guard there is a smaller diff than one per caller, and patching only the path the ticket names leaves a sibling caller still broken.\n\nRules:\n\n- No abstractions that weren't explicitly requested.\n- No new dependency if it can be avoided.\n- No boilerplate nobody asked for.\n- Deletion over addition. Boring over clever. Fewest files possible.\n- Shortest working diff wins, but only once you understand the problem. The smallest change in the wrong place isn't lazy, it's a second bug.\n- Question complex requests: \"Do you actually need X, or does Y cover it?\"\n- Pick the edge-case-correct option when two stdlib approaches are the same size, lazy means less code, not the flimsier algorithm.\n- Mark intentional simplifications with a `ponytail:` comment. If the shortcut has a known ceiling (global lock, O(n²) scan, naive heuristic), the comment names the ceiling and the upgrade path.\n\nNot lazy about: understanding the problem (read it fully and trace the real flow before picking a rung, a small diff you don't understand is just laziness dressed up as efficiency), input validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs (the platform is never the spec ideal, a clock drifts, a sensor reads off), anything explicitly requested. Lazy code without its check is unfinished: non-trivial logic leaves ONE runnable check behind, the smallest thing that fails if the logic breaks (an assert-based demo/self-check or one small test file; no frameworks, no fixtures). Trivial one-liners need no test.\n\n(Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)\n\n---\n\n## Onboarding (Circuito: backend)\n\n# Onboarding Conti Backend (actualizado PLAN_3 v1.5, 30/jun/2026)\n\n## Stack\n\n- Backend MCP/FastAPI para `conti-backend` (puerto `:9001`).\n- OpenHands Agent Server REST API (puerto `:3011` → `:3000` interno).\n- OpenHands Agent Canvas — GUI Next.js oficial (puerto `:3012` →\n  `:3012` interno).\n- OpenHands CLI textual embebido en web (puerto `:3013` → `:3001`\n  interno, comando `openhands web`).\n- Sourcebot v5.0.4 para RAG sobre código (puerto `:3010`).\n- LLM activo: `mistral/mistral-small-latest` vía Mistral API.\n- Redis: `redis_odoo:6379`, DB 14 asignada a Sourcebot.\n- Postgres: `compose-db-1:5432`, DB `sourcebot`.\n\n## Repos bind-mounted\n\n| Path contenedor | Repo | Rama activa | Uso |\n|-----------------|------|-------------|-----|\n| `/desarrollo` | contamela-stack (dev) | `develop` | flujo normal |\n| `/compose` | contamela-stack (prod) | `main` | hotfix + lectura pasiva |\n| `/contenedores/conti-backend` | orquestrador-contamela | `main` | devops backend |\n| `/home/nanobot` | (no es repo) | — | HOME persistente del agente |\n| `/tmp/free-agent` | (no es repo) | — | workspace del circuito `libre` |\n\n## Circuitos del agente (4)\n\n| ID | Workspace | Branch | Git action permitida |\n|----|-----------|--------|---------------------|\n| `desarrollo` | `/desarrollo` | `develop` | `run_salvar` (commit + push develop) |\n| `produccion` | `/compose` + `/desarrollo` | `main` en /compose, `develop` en /desarrollo | `run_promover` (develop→main+push) + `run_hotfix_sync` (main→develop) |\n| `backend` | `/contenedores/conti-backend` | `main` | `run_salvar` directo a main (sin flujo develop↔main) |\n| `libre` | `/tmp/free-agent` | — | ninguna (solo MCP de consulta) |\n\nCada circuito es una conversación persistente (`LocalConversation`) del\nOpenHands SDK. Los 4 conviven en memoria del proceso uvicorn.\n\n## Categorías MCP (filtrado real, Sprint 1.5)\n\nLas MCP tools se filtran ahora por categoría al construir la conversación\nde cada circuito. Categorías activas:\n\n- **bootstrap**: `health_check`, `get_config`, `get_rules`, `get_onboarding`, `reload_config`\n- **stack**: `get_container_health`, `get_container_logs`, `get_vps_status`\n- **gitops**: `get_git_*`, `run_salvar`, `run_promover`, `run_hotfix_sync`, `get_pipeline_summary`\n- **odoo**: 21 tools (`odoo_*`)\n- **rag**: `search_rag*`, `start_rag_ingest*`, `scan_documentos_nuevos`, `list_rag_store_docs`\n- **catolico**: 5 tools (`catolico_*`)\n- **documents**: 6 tools (`start_markdown_translation`, etc.)\n- **sheets**: 3 tools (`sheet_*`)\n- **filesystem**: 7 tools (`list_files`, `read_file`, etc.)\n- **code_edit** (nuevo): `validate_python_syntax`, `run_pytest`, `detect_circuit_from_path`, `cross_repo_search`\n\n| Circuito | Categorías permitidas |\n|----------|----------------------|\n| `desarrollo` | todas (10 categorías, 69 tools) |\n| `produccion` | todas (10 categorías, 69 tools) |\n| `backend` | todas (10 categorías, 69 tools) |\n| `libre` | bootstrap, rag, odoo, documents, sheets, catolico, filesystem (7 categorías, 55 tools — **NO** tiene gitops/stack/code_edit) |\n\n## Flujos de git\n\n### Flujo 1: dev → origin/develop (circuito `desarrollo`)\n\n```\nLuis edita /desarrollo\n  → run_salvar(confirm=true, summary=\"...\")\n  → git add -A && git commit -m \"...\" && git push origin develop\n```\n\n### Flujo 2: origin/develop → origin/main (circuito `produccion`)\n\n```\nrun_promover(confirm=true, summary=\"...\")\n  → cd /desarrollo, git checkout main, git pull\n  → git merge --no-ff develop -m \"merge: promoción...\"\n  → git push origin main\n  → cd /desarrollo, git checkout develop\n→ Luis corre bash /compose/3-despliegue.sh\n```\n\n### Flujo 3: hotfix main → develop sync (circuito `produccion`)\n\n```\nLuis edita /compose\n  → git add -A && git commit -m \"hotfix: ...\"  (en /compose)\n→ run_hotfix_sync(confirm=true, summary=\"...\")\n  → git push origin main                          (en /compose)\n  → git fetch origin + merge --no-ff origin/main  (en /desarrollo)\n  → git push origin develop                       (en /desarrollo)\n```\n\n### Flujo 4: commit directo a main en orquestador (circuito `backend`)\n\n```\nLuis edita /contenedores/conti-backend\n  → run_salvar(force_branch=\"main\", confirm=true, summary=\"...\")\n  → git add -A && git commit -m \"...\" && git push origin main\n```\n\n## Flujos de code editing por circuito (Sprint 1.5)\n\n### Circuito `desarrollo` (rama develop de contamela-stack)\n\n```\n1. Luis (o agente) edita archivos en /desarrollo\n2. Pre-commit (recomendado):\n   - cross_repo_search(query=<función a cambiar>, repos=[\"desarrollo\"])\n     → ver qué otros lugares usan la misma función\n   - validate_python_syntax(paths=[<archivos_editados>])\n     → confirmar sintaxis antes de commitear\n3. run_salvar(confirm=true, summary=\"<conventional commit>\")\n4. push a origin/develop vía run_salvar\n\nRestricciones:\n- Solo edita dentro de /desarrollo.\n- run_promover NO está habilitado acá (debe ir a circuito `produccion`).\n```\n\n### Circuito `produccion` (rama main + hotfix)\n\n```\nPara promover develop→main:\n  1. Luis pide al agente: \"promové develop→main con run_promover\"\n  2. run_promover(confirm=true) hace el merge dance\n  3. Luis corre 3-despliegue.sh manualmente\n\nPara hotfix en /compose:\n  1. Luis edita /compose directamente (vim, IDE, etc.)\n  2. git add -A && git commit -m \"hotfix: ...\"\n  3. Luis pide al agente: \"sincronizá con run_hotfix_sync\"\n  4. run_hotfix_sync(confirm=true) cierra el ciclo main→develop\n\nRestricciones:\n- /compose es RW SOLO para git (no para edits de código, salvo hotfix).\n- Cambios de código en producción normalmente van por develop→main.\n- 3-despliegue.sh solo Luis.\n```\n\n### Circuito `backend` (orquestador-contamela, solo main)\n\n```\n1. Luis (o agente) edita archivos en /contenedores/conti-backend\n2. Pre-commit OBLIGATORIO (recomendado):\n   a) validate_python_syntax(paths=[<archivos_editados>])\n      → si falla, NO commitear. Arreglar primero.\n   b) run_pytest(circuit=\"backend\", test_path=\"tests/test_<módulo>.py\")\n      → validar que el test suite sigue verde\n   c) run_pytest(circuit=\"backend\")  # suite completa, antes del commit final\n3. run_salvar(force_branch=\"main\", confirm=true, summary=\"<conventional commit>\")\n4. push a origin/main vía run_salvar\n\nRestricciones:\n- Solo edita dentro de /contenedores/conti-backend.\n- No hay flujo develop↔main (este repo solo tiene main).\n- run_hotfix_sync NO aplica (no hay develop).\n- run_promover NO aplica.\n```\n\n### Circuito `libre` (sin git)\n\n```\n- Conversacional, sin acceso a git.\n- No puede usar gitops tools (filtradas por categoría).\n- Si Luis pasa una ruta del host (ej: /mnt/nuevo-repo), trabajar ahí sin tocar git.\n- Si la tarea requiere editar archivos: detectar primero el circuito\n  correcto vía detect_circuit_from_path(path=...).\n  Si devuelve circuit=None, pedir credenciales a Luis.\n```\n\n## Code editing tools (categoría `code_edit`)\n\n| Tool | Uso típico | Circuitos |\n|------|------------|-----------|\n| `validate_python_syntax` | Antes de `run_salvar` en backend: confirmar que no hay syntax errors | backend, desarrollo, produccion |\n| `run_pytest` | Después de editar: validar que los tests siguen pasando | backend, desarrollo, produccion |\n| `detect_circuit_from_path` | Desde circuito `libre`: saber a qué circuito mandar una edición | libre |\n| `cross_repo_search` | Búsqueda en vivo (no RAG) sobre los 3 repos: cuando el índice de Sourcebot está desactualizado | todos |\n\n---\n\n## Codebase Memory (Knowledge Graph)\n\n**Herramienta**: `codebase-memory-mcp` v0.8.1 — binario estático C, sin deps.\n**Transporte**: MCP stdio (omp lo lanza como subprocess).\n**Ubicación**: `/home/conti/.local/bin/codebase-memory-mcp` (en conti-omp).\n\n### Projects indexados\n\n| Project | Path | Nodos | Edges |\n|---------|------|-------|-------|\n| `desarrollo` | `/desarrollo` | 153,281 | 560,947 |\n| `compose` | `/compose` | 133,693 | 468,366 |\n| `contenedores-conti-backend` | `/contenedores/conti-backend` | 4,360 | 8,605 |\n\n### Tools principales\n\n| Tool | Descripción | Ejemplo |\n|------|-------------|---------|\n| `search_graph` | Buscar por nombre/patrón regex | `search_graph(name_pattern=\".*router.*\", project=\"contenedores-conti-backend\")` |\n| `get_architecture` | Overview: languages, packages, routes, hotspots | `get_architecture(project=\"desarrollo\")` |\n| `trace_path` | Call graph (quién llama a qué) | `trace_path(function_name=\"run_task\", direction=\"both\")` |\n| `get_code_snippet` | Leer source de una función | `get_code_snippet(qualified_name=\"contenedores-conti-backend.app.main\")` |\n| `query_graph` | Cypher queries sobre el knowledge graph | `query_graph(query=\"MATCH (f:Function)-[:CALLS]->(g) RETURN g.name\")` |\n| `detect_changes` | Mapear git diff a symbols afectados | `detect_changes(project=\"desarrollo\")` |\n| `search_code` | Grep semántico | `search_code(query=\"def run_task\", project=\"contenedores-conti-backend\")` |\n\n### Cuándo usar\n\n- **Antes de editar código**: `search_graph` o `get_architecture` para entender la estructura\n- **Para encontrar dónde está algo**: `search_graph` con patrón regex\n- **Para entender dependencias**: `trace_path` para ver call chains\n- **Para dead code detection**: `query_graph` con `WHERE NOT EXISTS { (f)<-[:CALLS]-() }`\n- **Para revisar cambios**: `detect_changes` antes de commitear\n\n---\n\n## Skills de omp\n\nomp tiene 8 skills configuradas en `/home/conti/.omp/profiles/conti/skills/`.\nomp las carga automáticamente como instrucciones.\n\n### Skills genéricas (siempre disponibles)\n\n| Skill | Descripción | Cuándo usar |\n|-------|-------------|-------------|\n| `mcp-backend-tools` | Acceso a las 73 MCP tools del backend vía bash+curl | Cuando necesites invocar cualquier MCP tool |\n| `codebase-memory` | Knowledge graph de los 3 repos vía codebase-memory-mcp | Para buscar funciones, clases, call paths, architecture |\n| `odoo-tools` | 21 tools para Odoo ERP (productos, clientes, pedidos, facturas) | Cuando el usuario pida consultar/crear/modificar datos de Odoo |\n| `gitops-tools` | Tools para Git (commit, push, merge, hotfix) | Para operaciones Git seguras |\n| `observability-tools` | Tools para trazas (Ponytail) | Al final de cada tarea para persistir la traza |\n\n### Skills por circuito (cargadas según el circuito activo)\n\n| Skill | Circuito | Workspace | Git action |\n|-------|----------|-----------|------------|\n| `circuit-desarrollo` | desarrollo | `/desarrollo` | `run_salvar` (commit+push develop) |\n| `circuit-produccion` | produccion | `/compose` | `run_promover` (develop→main), `run_hotfix_sync` (main→develop) |\n| `circuit-backend` | backend | `/contenedores/conti-backend` | `run_salvar` (commit+push main) |\n\n### Cómo invocar MCP tools desde skills\n\nTodas las skills usan el mismo patrón para invocar MCP tools:\n\n```bash\ncurl -s -X POST http://conti-backend:9001/mcp/call \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\": \"TOOL_NAME\", \"arguments\": {}}'\n```\n\n---\n\n## Trazas de Ponytail (observabilidad)\n\n### Ubicación de las trazas\n\n| Circuito | Directorio de trazas | Rama | Notas |\n|----------|----------------------|------|-------|\n| `desarrollo` | `/desarrollo/.ponytail/traces/` | `develop` | Trazas generadas durante el flujo normal de desarrollo |\n| `produccion` | `/compose/.ponytail/traces/` | `main` | Trazas generadas si el usuario edita archivos directamente en `/compose` (hotfix) |\n| `backend` | `/contenedores/conti-backend/.ponytail/traces/` | `main` | Trazas de cambios en el orquestador |\n| `libre` | `/tmp/free-agent/.ponytail/traces/` | — | Trazas temporales (no persisten entre reinicios) |\n\n### Formato de las trazas\n- **Nombre del archivo**: `YYYY-MM-DD_<circuito>_tr-<hash>.md`\n  Ejemplo: `2026-07-01_desarrollo_tr-3de52a35bffa.md`.\n- **Contenido**:\n  - Frontmatter YAML con metadatos (timestamp, circuito, modelo LLM, duración).\n  - Cuerpo en GFM con:\n    - Mensajes de usuario/asistente.\n    - Llamadas a herramientas (MCP y built-in).\n    - Resultados de Sourcebot.\n    - Eventos de omp (si `CONTI_USE_OMP_AGENT=true`).\n  - Diagrama Mermaid de secuencia de herramientas.\n\n### Cómo recuperar trazas\n\n```bash\n# Listar trazas en /desarrollo:\nls -la /desarrollo/.ponytail/traces/\n\n# Ver una traza específica:\ncat /desarrollo/.ponytail/traces/2026-07-01_desarrollo_tr-3de52a35bffa.md\n\n# Buscar trazas por circuito:\ngrep -l \"circuito: desarrollo\" /desarrollo/.ponytail/traces/*.md\n```\n\n### Limpieza de trazas antiguas\n\n```bash\n# Eliminar trazas con más de 90 días en /desarrollo:\nfind /desarrollo/.ponytail/traces -name \"*.md\" -mtime +90 -delete\n\n# Eliminar trazas con más de 90 días en /compose:\nfind /compose/.ponytail/traces -name \"*.md\" -mtime +90 -delete\n```\n\n**Frecuencia recomendada**: Ejecutar semanalmente vía `cron`.\n\n## Hermes (legacy, sigue activo)\n\n- 5 API servers (8766-8770) requieren `Authorization: Bearer` con\n  `API_SERVER_KEY`.\n- Cada perfil tiene su `API_SERVER_KEY` en\n  `/app/hermes_profiles/contihome/profiles/<perfil>/.env`.\n- El LLM emulado en `:9001` ya NO redirige a Hermes (regla PLAN_LLM v4).\n\n## Flujos de sincronización\n\n### Sincronización de `/desarrollo` (develop) con `/compose` (main)\n\n**Objetivo**: Mantener `develop` actualizado con los cambios de `main` (producción).\n\n```bash\n# Desde /desarrollo:\ngit fetch origin\ngit reset --hard origin/main  # Sobrescribe develop con main (¡cuidado con cambios locales!)\ngit push origin develop --force\n```\n\n**Cuándo usarlo**:\n- Después de un hotfix en `/compose`.\n- Para asegurar que `develop` tenga los últimos cambios de producción.\n\n---\n\n### Sincronización de `conti-backend` con `orquestador-contamela`\n\n**Objetivo**: Mantener el repositorio remoto `orquestador-contamela` actualizado con los cambios locales.\n\n```bash\n# Desde /contenedores/conti-backend:\n./sync_upstream.sh  # Script de automatización\n```\n\n**Detalles del script `sync_upstream.sh`**:\n```bash\n#!/bin/bash\ncd /contenedores/conti-backend\ngit fetch upstream\ngit merge upstream/main --no-ff -m \"sync: sincronizar con orquestador-contamela\"\ngit push upstream main\n```\n\n**Cuándo usarlo**:\n- Después de implementar nuevas features en `conti-backend`.\n- Antes de cerrar un sprint o hacer un release.\n\n---\n\n## Reglas operativas\n\nVer `docs/rules.md`. Resumen crítico:\n\n- No usar SSH para operar repos bind-mounted.\n- Toda mutación git va por tools dedicadas (run_salvar / run_promover /\n  run_hotfix_sync).\n- Deploy solo Luis: `bash /compose/3-despliegue.sh`.\n- Idioma: Español.\n\n---\n\n## Reglas (Circuito: backend)\n\n## Reglas Comunes\n\n\n1. NUNCA ejecutar `git commit`, `git push`, `git merge`, `git reset`,\n   `git rebase` directo en el shell del agente.\n   Solo usar las tools dedicadas: `run_salvar` (preview), `run_promover`\n   (preview), `run_hotfix_sync` (preview). Estas pasan por el Gatekeeper\n   (`validate_diff`) antes de aplicar.\n\n2. NUNCA ejecutar `bash /compose/3-despliegue.sh` ni\n   `docker compose -f producion.yml up -d`. Solo Luis puede deployar.\n\n3. Toda acción destructiva → preview + confirmación explícita (`confirm=true`).\n\n4. Idioma: siempre Español.\n\n5. `/compose` es RW SOLO para git (commit/push en main, git pull desde\n   origin). Cambios de código en producción normalmente van por el flujo\n   develop → main. Edición directa en `/compose` solo se permite para\n   hotfixes urgentes.\n\n6. Operar DENTRO del contenedor, sin SSH (los bind-mounts ya conectan el\n   host con el working dir del agente).\n\n7. Si la tarea accede a algo FUERA de `/desarrollo`, `/compose`,\n   `/contenedores/conti-backend`, `/home/nanobot`: pedir credenciales a\n   Luis explícitamente antes de proceder.\n\n8. Acción sobre palabras: nada de \"¡Gran pregunta!\", \"¡Excelente!\", etc.\n   Respuestas técnicas, directas y concisas.\n\n9. Si Luis modificó archivos en `/compose` directamente, avisar del\n   riesgo antes de cualquier operación: `3-despliegue.sh` puede hacer\n   `git reset --hard` y borrar archivos uncommitted.\n\n10. Usar solo tools registradas por el backend (`get_rules`, `get_config`,\n    `get_onboarding` las lista).\n\n11. No inventar nombres de tools ni schemas.\n\n12. Validar argumentos antes de ejecutar mutaciones.\n\n13. Respetar allowlists de paths y visibilidades del circuito activo.\n\n\n\n\n## Reglas para Circuito: backend\n\n\n16. `circuit: backend` (workspace `/contenedores/conti-backend`, branch\n    `main`):\n    - `run_salvar` commitea y pushea a main directamente (este repo solo\n      tiene main).\n    - `run_promover` y `run_hotfix_sync` NO aplican.\n    - **Code editing OBLIGATORIO pre-commit**:\n      1. `validate_python_syntax(paths=[<archivos>])` → debe pasar.\n      2. `run_pytest(circuit=\"backend\", test_path=<módulo_afectado>)` →\n         debe pasar.\n      3. (Opcional pero recomendado) `run_pytest(circuit=\"backend\")` →\n         suite completa verde.\n    - Si validate_python_syntax falla → NO commitear, arreglar primero.\n    - Si run_pytest falla → NO commitear, arreglar primero.\n    - **Trazas de Ponytail**: Se guardan en `/contenedores/conti-backend/.ponytail/traces/`\n      con formato `YYYY-MM-DD_backend_tr-<hash>.md`.\n\n---\n\n## Configuración del Backend\n\n{\n  \"server\": {\n    \"host\": \"0.0.0.0\",\n    \"port\": 9001,\n    \"reload\": false\n  },\n  \"llm_emulation\": {\n    \"enabled\": true,\n    \"default_model\": \"conti-default\",\n    \"streaming_enabled\": true,\n    \"mode\": \"nanobot_serve\",\n    \"serve_profile\": \"conti-llm-serve\",\n    \"serve_base_url\": \"http://127.0.0.1:8765\"\n  },\n  \"providers\": {\n    \"active\": \"openai_compatible\",\n    \"openai_compatible\": {\n      \"api_base\": \"${OPENAI_BASE_URL}\",\n      \"api_key_env\": \"***REDACTED***\"\n    }\n  },\n  \"paths\": {\n    \"home_root\": \"/home/nanobot\",\n    \"development_repo\": \"/desarrollo\",\n    \"production_repo\": \"/compose\",\n    \"onboarding_file\": \"/app/docs/onboarding.md\",\n    \"onboarding_brief_file\": \"/app/docs/onboarding_brief.md\",\n    \"rules_file\": \"/app/docs/rules.md\"\n  },\n  \"ui\": {\n    \"enabled\": true,\n    \"title\": \"Conti MCP Console\"\n  },\n  \"rag\": {\n    \"base_url\": \"http://flamehaven:8000\",\n    \"api_key_env\": \"***REDACTED***\",\n    \"default_store\": \"default\"\n  },\n  \"odoo\": {\n    \"default_connection\": \"prod\",\n    \"default_lang\": \"es_AR\",\n    \"default_tz\": \"America/Argentina/Buenos_Aires\",\n    \"connect_timeout_seconds\": 30,\n    \"max_retries\": 3,\n    \"ocr_enabled\": true,\n    \"payment_proof_max_mb\": 1,\n    \"connections\": {\n      \"prod\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"demo\",\n        \"host_header\": \"demo.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"dev\": {\n        \"url\": \"http://odoo18_dev:8069\",\n        \"db\": \"demo\",\n        \"host_header\": null,\n        \"username_env\": \"ODOO_DEV_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_DEV_USER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"resto\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"resto\",\n        \"host_header\": \"resto.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"resto\",\n        \"default_password\": \"***REDACTED***\"\n      }\n    }\n  },\n  \"mercadopago\": {\n    \"access_token_env\": \"***REDACTED***\",\n    \"public_key_env\": \"***REDACTED***\",\n    \"sandbox_env\": \"MERCADOPAGO_SANDBOX\",\n    \"api_base_url\": \"https://api.mercadopago.com\",\n    \"success_url\": \"http://localhost:9001/odoo/mercadopago/success\",\n    \"failure_url\": \"http://localhost:9001/odoo/mercadopago/failure\",\n    \"pending_url\": \"http://localhost:9001/odoo/mercadopago/pending\",\n    \"notification_url\": \"http://localhost:9001/odoo/mercadopago/webhook\",\n    \"request_timeout_seconds\": 30\n  },\n  \"ocrl_sheet\": {\n    \"sheet_id\": \"1x3I9EvplbIk4q-To0BBjdUdKJyoOYUWzVgo_MwC2z7k\",\n    \"gid\": 0,\n    \"account_sheet_prefix\": \"CL\",\n    \"credentials_env\": \"OCRL_SHEET_CREDENTIALS_JSON\",\n    \"request_timeout_seconds\": 30\n  }\n}\n\n---\n\n# Circuit: backend\nWorkspace: /contenedores/conti-backend\n\n\n---\n\n# Búsqueda de código\n\nTenés acceso a codebase-memory-mcp como MCP server.\nHerramientas: search_graph, get_architecture, trace_path, get_code_snippet, query_graph.\nProjects indexados: desarrollo (153K nodos), compose (134K), contenedores-conti-backend (4.4K).\n\n\n---\n\n# User Task\n\n---\n\nAnaliza los Agentes Hermes Instalados en este contenedor y genera un reporte de sus configuraciones y habilidades en un archivo /contenedores/conti-backend/Agentes_hermes_doc.md",
+        "governance_context": "## Ponytail Rules (Reglas Comunes)\n\n\n---\n\n# Ponytail, lazy senior dev mode\n\nYou are a lazy senior developer. Lazy means efficient, not careless. The best code is the code never written.\n\nBefore writing any code, stop at the first rung that holds:\n\n1. Does this need to be built at all? (YAGNI)\n2. Does it already exist in this codebase? Reuse the helper, util, or pattern that's already here, don't re-write it.\n3. Does the standard library already do this? Use it.\n4. Does a native platform feature cover it? Use it.\n5. Does an already-installed dependency solve it? Use it.\n6. Can this be one line? Make it one line.\n7. Only then: write the minimum code that works.\n\nThe ladder runs after you understand the problem, not instead of it: read the task and the code it touches, trace the real flow end to end, then climb.\n\nBug fix = root cause, not symptom: a report names a symptom. Grep every caller of the function you touch and fix the shared function once — one guard there is a smaller diff than one per caller, and patching only the path the ticket names leaves a sibling caller still broken.\n\nRules:\n\n- No abstractions that weren't explicitly requested.\n- No new dependency if it can be avoided.\n- No boilerplate nobody asked for.\n- Deletion over addition. Boring over clever. Fewest files possible.\n- Shortest working diff wins, but only once you understand the problem. The smallest change in the wrong place isn't lazy, it's a second bug.\n- Question complex requests: \"Do you actually need X, or does Y cover it?\"\n- Pick the edge-case-correct option when two stdlib approaches are the same size, lazy means less code, not the flimsier algorithm.\n- Mark intentional simplifications with a `ponytail:` comment. If the shortcut has a known ceiling (global lock, O(n²) scan, naive heuristic), the comment names the ceiling and the upgrade path.\n\nNot lazy about: understanding the problem (read it fully and trace the real flow before picking a rung, a small diff you don't understand is just laziness dressed up as efficiency), input validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs (the platform is never the spec ideal, a clock drifts, a sensor reads off), anything explicitly requested. Lazy code without its check is unfinished: non-trivial logic leaves ONE runnable check behind, the smallest thing that fails if the logic breaks (an assert-based demo/self-check or one small test file; no frameworks, no fixtures). Trivial one-liners need no test.\n\n(Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)\n\n---\n\n## Onboarding (Circuito: backend)\n\n# Onboarding Conti Backend (actualizado PLAN_3 v1.5, 30/jun/2026)\n\n## Stack\n\n- Backend MCP/FastAPI para `conti-backend` (puerto `:9001`).\n- OpenHands Agent Server REST API (puerto `:3011` → `:3000` interno).\n- OpenHands Agent Canvas — GUI Next.js oficial (puerto `:3012` →\n  `:3012` interno).\n- OpenHands CLI textual embebido en web (puerto `:3013` → `:3001`\n  interno, comando `openhands web`).\n- Sourcebot v5.0.4 para RAG sobre código (puerto `:3010`).\n- LLM activo: `mistral/mistral-small-latest` vía Mistral API.\n- Redis: `redis_odoo:6379`, DB 14 asignada a Sourcebot.\n- Postgres: `compose-db-1:5432`, DB `sourcebot`.\n\n## Repos bind-mounted\n\n| Path contenedor | Repo | Rama activa | Uso |\n|-----------------|------|-------------|-----|\n| `/desarrollo` | contamela-stack (dev) | `develop` | flujo normal |\n| `/compose` | contamela-stack (prod) | `main` | hotfix + lectura pasiva |\n| `/contenedores/conti-backend` | orquestrador-contamela | `main` | devops backend |\n| `/home/nanobot` | (no es repo) | — | HOME persistente del agente |\n| `/tmp/free-agent` | (no es repo) | — | workspace del circuito `libre` |\n\n## Circuitos del agente (4)\n\n| ID | Workspace | Branch | Git action permitida |\n|----|-----------|--------|---------------------|\n| `desarrollo` | `/desarrollo` | `develop` | `run_salvar` (commit + push develop) |\n| `produccion` | `/compose` + `/desarrollo` | `main` en /compose, `develop` en /desarrollo | `run_promover` (develop→main+push) + `run_hotfix_sync` (main→develop) |\n| `backend` | `/contenedores/conti-backend` | `main` | `run_salvar` directo a main (sin flujo develop↔main) |\n| `libre` | `/tmp/free-agent` | — | ninguna (solo MCP de consulta) |\n\nCada circuito es una conversación persistente (`LocalConversation`) del\nOpenHands SDK. Los 4 conviven en memoria del proceso uvicorn.\n\n## Categorías MCP (filtrado real, Sprint 1.5)\n\nLas MCP tools se filtran ahora por categoría al construir la conversación\nde cada circuito. Categorías activas:\n\n- **bootstrap**: `health_check`, `get_config`, `get_rules`, `get_onboarding`, `reload_config`\n- **stack**: `get_container_health`, `get_container_logs`, `get_vps_status`\n- **gitops**: `get_git_*`, `run_salvar`, `run_promover`, `run_hotfix_sync`, `get_pipeline_summary`\n- **odoo**: 21 tools (`odoo_*`)\n- **rag**: `search_rag*`, `start_rag_ingest*`, `scan_documentos_nuevos`, `list_rag_store_docs`\n- **catolico**: 5 tools (`catolico_*`)\n- **documents**: 6 tools (`start_markdown_translation`, etc.)\n- **sheets**: 3 tools (`sheet_*`)\n- **filesystem**: 7 tools (`list_files`, `read_file`, etc.)\n- **code_edit** (nuevo): `validate_python_syntax`, `run_pytest`, `detect_circuit_from_path`, `cross_repo_search`\n\n| Circuito | Categorías permitidas |\n|----------|----------------------|\n| `desarrollo` | todas (10 categorías, 69 tools) |\n| `produccion` | todas (10 categorías, 69 tools) |\n| `backend` | todas (10 categorías, 69 tools) |\n| `libre` | bootstrap, rag, odoo, documents, sheets, catolico, filesystem (7 categorías, 55 tools — **NO** tiene gitops/stack/code_edit) |\n\n## Flujos de git\n\n### Flujo 1: dev → origin/develop (circuito `desarrollo`)\n\n```\nLuis edita /desarrollo\n  → run_salvar(confirm=true, summary=\"...\")\n  → git add -A && git commit -m \"...\" && git push origin develop\n```\n\n### Flujo 2: origin/develop → origin/main (circuito `produccion`)\n\n```\nrun_promover(confirm=true, summary=\"...\")\n  → cd /desarrollo, git checkout main, git pull\n  → git merge --no-ff develop -m \"merge: promoción...\"\n  → git push origin main\n  → cd /desarrollo, git checkout develop\n→ Luis corre bash /compose/3-despliegue.sh\n```\n\n### Flujo 3: hotfix main → develop sync (circuito `produccion`)\n\n```\nLuis edita /compose\n  → git add -A && git commit -m \"hotfix: ...\"  (en /compose)\n→ run_hotfix_sync(confirm=true, summary=\"...\")\n  → git push origin main                          (en /compose)\n  → git fetch origin + merge --no-ff origin/main  (en /desarrollo)\n  → git push origin develop                       (en /desarrollo)\n```\n\n### Flujo 4: commit directo a main en orquestador (circuito `backend`)\n\n```\nLuis edita /contenedores/conti-backend\n  → run_salvar(force_branch=\"main\", confirm=true, summary=\"...\")\n  → git add -A && git commit -m \"...\" && git push origin main\n```\n\n## Flujos de code editing por circuito (Sprint 1.5)\n\n### Circuito `desarrollo` (rama develop de contamela-stack)\n\n```\n1. Luis (o agente) edita archivos en /desarrollo\n2. Pre-commit (recomendado):\n   - cross_repo_search(query=<función a cambiar>, repos=[\"desarrollo\"])\n     → ver qué otros lugares usan la misma función\n   - validate_python_syntax(paths=[<archivos_editados>])\n     → confirmar sintaxis antes de commitear\n3. run_salvar(confirm=true, summary=\"<conventional commit>\")\n4. push a origin/develop vía run_salvar\n\nRestricciones:\n- Solo edita dentro de /desarrollo.\n- run_promover NO está habilitado acá (debe ir a circuito `produccion`).\n```\n\n### Circuito `produccion` (rama main + hotfix)\n\n```\nPara promover develop→main:\n  1. Luis pide al agente: \"promové develop→main con run_promover\"\n  2. run_promover(confirm=true) hace el merge dance\n  3. Luis corre 3-despliegue.sh manualmente\n\nPara hotfix en /compose:\n  1. Luis edita /compose directamente (vim, IDE, etc.)\n  2. git add -A && git commit -m \"hotfix: ...\"\n  3. Luis pide al agente: \"sincronizá con run_hotfix_sync\"\n  4. run_hotfix_sync(confirm=true) cierra el ciclo main→develop\n\nRestricciones:\n- /compose es RW SOLO para git (no para edits de código, salvo hotfix).\n- Cambios de código en producción normalmente van por develop→main.\n- 3-despliegue.sh solo Luis.\n```\n\n### Circuito `backend` (orquestador-contamela, solo main)\n\n```\n1. Luis (o agente) edita archivos en /contenedores/conti-backend\n2. Pre-commit OBLIGATORIO (recomendado):\n   a) validate_python_syntax(paths=[<archivos_editados>])\n      → si falla, NO commitear. Arreglar primero.\n   b) run_pytest(circuit=\"backend\", test_path=\"tests/test_<módulo>.py\")\n      → validar que el test suite sigue verde\n   c) run_pytest(circuit=\"backend\")  # suite completa, antes del commit final\n3. run_salvar(force_branch=\"main\", confirm=true, summary=\"<conventional commit>\")\n4. push a origin/main vía run_salvar\n\nRestricciones:\n- Solo edita dentro de /contenedores/conti-backend.\n- No hay flujo develop↔main (este repo solo tiene main).\n- run_hotfix_sync NO aplica (no hay develop).\n- run_promover NO aplica.\n```\n\n### Circuito `libre` (sin git)\n\n```\n- Conversacional, sin acceso a git.\n- No puede usar gitops tools (filtradas por categoría).\n- Si Luis pasa una ruta del host (ej: /mnt/nuevo-repo), trabajar ahí sin tocar git.\n- Si la tarea requiere editar archivos: detectar primero el circuito\n  correcto vía detect_circuit_from_path(path=...).\n  Si devuelve circuit=None, pedir credenciales a Luis.\n```\n\n## Code editing tools (categoría `code_edit`)\n\n| Tool | Uso típico | Circuitos |\n|------|------------|-----------|\n| `validate_python_syntax` | Antes de `run_salvar` en backend: confirmar que no hay syntax errors | backend, desarrollo, produccion |\n| `run_pytest` | Después de editar: validar que los tests siguen pasando | backend, desarrollo, produccion |\n| `detect_circuit_from_path` | Desde circuito `libre`: saber a qué circuito mandar una edición | libre |\n| `cross_repo_search` | Búsqueda en vivo (no RAG) sobre los 3 repos: cuando el índice de Sourcebot está desactualizado | todos |\n\n---\n\n## Codebase Memory (Knowledge Graph)\n\n**Herramienta**: `codebase-memory-mcp` v0.8.1 — binario estático C, sin deps.\n**Transporte**: MCP stdio (omp lo lanza como subprocess).\n**Ubicación**: `/home/conti/.local/bin/codebase-memory-mcp` (en conti-omp).\n\n### Projects indexados\n\n| Project | Path | Nodos | Edges |\n|---------|------|-------|-------|\n| `desarrollo` | `/desarrollo` | 153,281 | 560,947 |\n| `compose` | `/compose` | 133,693 | 468,366 |\n| `contenedores-conti-backend` | `/contenedores/conti-backend` | 4,360 | 8,605 |\n\n### Tools principales\n\n| Tool | Descripción | Ejemplo |\n|------|-------------|---------|\n| `search_graph` | Buscar por nombre/patrón regex | `search_graph(name_pattern=\".*router.*\", project=\"contenedores-conti-backend\")` |\n| `get_architecture` | Overview: languages, packages, routes, hotspots | `get_architecture(project=\"desarrollo\")` |\n| `trace_path` | Call graph (quién llama a qué) | `trace_path(function_name=\"run_task\", direction=\"both\")` |\n| `get_code_snippet` | Leer source de una función | `get_code_snippet(qualified_name=\"contenedores-conti-backend.app.main\")` |\n| `query_graph` | Cypher queries sobre el knowledge graph | `query_graph(query=\"MATCH (f:Function)-[:CALLS]->(g) RETURN g.name\")` |\n| `detect_changes` | Mapear git diff a symbols afectados | `detect_changes(project=\"desarrollo\")` |\n| `search_code` | Grep semántico | `search_code(query=\"def run_task\", project=\"contenedores-conti-backend\")` |\n\n### Cuándo usar\n\n- **Antes de editar código**: `search_graph` o `get_architecture` para entender la estructura\n- **Para encontrar dónde está algo**: `search_graph` con patrón regex\n- **Para entender dependencias**: `trace_path` para ver call chains\n- **Para dead code detection**: `query_graph` con `WHERE NOT EXISTS { (f)<-[:CALLS]-() }`\n- **Para revisar cambios**: `detect_changes` antes de commitear\n\n---\n\n## Skills de omp\n\nomp tiene 8 skills configuradas en `/home/conti/.omp/profiles/conti/skills/`.\nomp las carga automáticamente como instrucciones.\n\n### Skills genéricas (siempre disponibles)\n\n| Skill | Descripción | Cuándo usar |\n|-------|-------------|-------------|\n| `mcp-backend-tools` | Acceso a las 73 MCP tools del backend vía bash+curl | Cuando necesites invocar cualquier MCP tool |\n| `codebase-memory` | Knowledge graph de los 3 repos vía codebase-memory-mcp | Para buscar funciones, clases, call paths, architecture |\n| `odoo-tools` | 21 tools para Odoo ERP (productos, clientes, pedidos, facturas) | Cuando el usuario pida consultar/crear/modificar datos de Odoo |\n| `gitops-tools` | Tools para Git (commit, push, merge, hotfix) | Para operaciones Git seguras |\n| `observability-tools` | Tools para trazas (Ponytail) | Al final de cada tarea para persistir la traza |\n\n### Skills por circuito (cargadas según el circuito activo)\n\n| Skill | Circuito | Workspace | Git action |\n|-------|----------|-----------|------------|\n| `circuit-desarrollo` | desarrollo | `/desarrollo` | `run_salvar` (commit+push develop) |\n| `circuit-produccion` | produccion | `/compose` | `run_promover` (develop→main), `run_hotfix_sync` (main→develop) |\n| `circuit-backend` | backend | `/contenedores/conti-backend` | `run_salvar` (commit+push main) |\n\n### Cómo invocar MCP tools desde skills\n\nTodas las skills usan el mismo patrón para invocar MCP tools:\n\n```bash\ncurl -s -X POST http://conti-backend:9001/mcp/call \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\": \"TOOL_NAME\", \"arguments\": {}}'\n```\n\n---\n\n## Trazas de Ponytail (observabilidad)\n\n### Ubicación de las trazas\n\n| Circuito | Directorio de trazas | Rama | Notas |\n|----------|----------------------|------|-------|\n| `desarrollo` | `/desarrollo/.ponytail/traces/` | `develop` | Trazas generadas durante el flujo normal de desarrollo |\n| `produccion` | `/compose/.ponytail/traces/` | `main` | Trazas generadas si el usuario edita archivos directamente en `/compose` (hotfix) |\n| `backend` | `/contenedores/conti-backend/.ponytail/traces/` | `main` | Trazas de cambios en el orquestador |\n| `libre` | `/tmp/free-agent/.ponytail/traces/` | — | Trazas temporales (no persisten entre reinicios) |\n\n### Formato de las trazas\n- **Nombre del archivo**: `YYYY-MM-DD_<circuito>_tr-<hash>.md`\n  Ejemplo: `2026-07-01_desarrollo_tr-3de52a35bffa.md`.\n- **Contenido**:\n  - Frontmatter YAML con metadatos (timestamp, circuito, modelo LLM, duración).\n  - Cuerpo en GFM con:\n    - Mensajes de usuario/asistente.\n    - Llamadas a herramientas (MCP y built-in).\n    - Resultados de Sourcebot.\n    - Eventos de omp (si `CONTI_USE_OMP_AGENT=true`).\n  - Diagrama Mermaid de secuencia de herramientas.\n\n### Cómo recuperar trazas\n\n```bash\n# Listar trazas en /desarrollo:\nls -la /desarrollo/.ponytail/traces/\n\n# Ver una traza específica:\ncat /desarrollo/.ponytail/traces/2026-07-01_desarrollo_tr-3de52a35bffa.md\n\n# Buscar trazas por circuito:\ngrep -l \"circuito: desarrollo\" /desarrollo/.ponytail/traces/*.md\n```\n\n### Limpieza de trazas antiguas\n\n```bash\n# Eliminar trazas con más de 90 días en /desarrollo:\nfind /desarrollo/.ponytail/traces -name \"*.md\" -mtime +90 -delete\n\n# Eliminar trazas con más de 90 días en /compose:\nfind /compose/.ponytail/traces -name \"*.md\" -mtime +90 -delete\n```\n\n**Frecuencia recomendada**: Ejecutar semanalmente vía `cron`.\n\n## Hermes (legacy, sigue activo)\n\n- 5 API servers (8766-8770) requieren `Authorization: Bearer` con\n  `API_SERVER_KEY`.\n- Cada perfil tiene su `API_SERVER_KEY` en\n  `/app/hermes_profiles/contihome/profiles/<perfil>/.env`.\n- El LLM emulado en `:9001` ya NO redirige a Hermes (regla PLAN_LLM v4).\n\n## Flujos de sincronización\n\n### Sincronización de `/desarrollo` (develop) con `/compose` (main)\n\n**Objetivo**: Mantener `develop` actualizado con los cambios de `main` (producción).\n\n```bash\n# Desde /desarrollo:\ngit fetch origin\ngit reset --hard origin/main  # Sobrescribe develop con main (¡cuidado con cambios locales!)\ngit push origin develop --force\n```\n\n**Cuándo usarlo**:\n- Después de un hotfix en `/compose`.\n- Para asegurar que `develop` tenga los últimos cambios de producción.\n\n---\n\n### Sincronización de `conti-backend` con `orquestador-contamela`\n\n**Objetivo**: Mantener el repositorio remoto `orquestador-contamela` actualizado con los cambios locales.\n\n```bash\n# Desde /contenedores/conti-backend:\n./sync_upstream.sh  # Script de automatización\n```\n\n**Detalles del script `sync_upstream.sh`**:\n```bash\n#!/bin/bash\ncd /contenedores/conti-backend\ngit fetch upstream\ngit merge upstream/main --no-ff -m \"sync: sincronizar con orquestador-contamela\"\ngit push upstream main\n```\n\n**Cuándo usarlo**:\n- Después de implementar nuevas features en `conti-backend`.\n- Antes de cerrar un sprint o hacer un release.\n\n---\n\n## Reglas operativas\n\nVer `docs/rules.md`. Resumen crítico:\n\n- No usar SSH para operar repos bind-mounted.\n- Toda mutación git va por tools dedicadas (run_salvar / run_promover /\n  run_hotfix_sync).\n- Deploy solo Luis: `bash /compose/3-despliegue.sh`.\n- Idioma: Español.\n\n---\n\n## Reglas (Circuito: backend)\n\n## Reglas Comunes\n\n\n1. NUNCA ejecutar `git commit`, `git push`, `git merge`, `git reset`,\n   `git rebase` directo en el shell del agente.\n   Solo usar las tools dedicadas: `run_salvar` (preview), `run_promover`\n   (preview), `run_hotfix_sync` (preview). Estas pasan por el Gatekeeper\n   (`validate_diff`) antes de aplicar.\n\n2. NUNCA ejecutar `bash /compose/3-despliegue.sh` ni\n   `docker compose -f producion.yml up -d`. Solo Luis puede deployar.\n\n3. Toda acción destructiva → preview + confirmación explícita (`confirm=true`).\n\n4. Idioma: siempre Español.\n\n5. `/compose` es RW SOLO para git (commit/push en main, git pull desde\n   origin). Cambios de código en producción normalmente van por el flujo\n   develop → main. Edición directa en `/compose` solo se permite para\n   hotfixes urgentes.\n\n6. Operar DENTRO del contenedor, sin SSH (los bind-mounts ya conectan el\n   host con el working dir del agente).\n\n7. Si la tarea accede a algo FUERA de `/desarrollo`, `/compose`,\n   `/contenedores/conti-backend`, `/home/nanobot`: pedir credenciales a\n   Luis explícitamente antes de proceder.\n\n8. Acción sobre palabras: nada de \"¡Gran pregunta!\", \"¡Excelente!\", etc.\n   Respuestas técnicas, directas y concisas.\n\n9. Si Luis modificó archivos en `/compose` directamente, avisar del\n   riesgo antes de cualquier operación: `3-despliegue.sh` puede hacer\n   `git reset --hard` y borrar archivos uncommitted.\n\n10. Usar solo tools registradas por el backend (`get_rules`, `get_config`,\n    `get_onboarding` las lista).\n\n11. No inventar nombres de tools ni schemas.\n\n12. Validar argumentos antes de ejecutar mutaciones.\n\n13. Respetar allowlists de paths y visibilidades del circuito activo.\n\n\n\n\n## Reglas para Circuito: backend\n\n\n16. `circuit: backend` (workspace `/contenedores/conti-backend`, branch\n    `main`):\n    - `run_salvar` commitea y pushea a main directamente (este repo solo\n      tiene main).\n    - `run_promover` y `run_hotfix_sync` NO aplican.\n    - **Code editing OBLIGATORIO pre-commit**:\n      1. `validate_python_syntax(paths=[<archivos>])` → debe pasar.\n      2. `run_pytest(circuit=\"backend\", test_path=<módulo_afectado>)` →\n         debe pasar.\n      3. (Opcional pero recomendado) `run_pytest(circuit=\"backend\")` →\n         suite completa verde.\n    - Si validate_python_syntax falla → NO commitear, arreglar primero.\n    - Si run_pytest falla → NO commitear, arreglar primero.\n    - **Trazas de Ponytail**: Se guardan en `/contenedores/conti-backend/.ponytail/traces/`\n      con formato `YYYY-MM-DD_backend_tr-<hash>.md`.\n\n---\n\n## Configuración del Backend\n\n{\n  \"server\": {\n    \"host\": \"0.0.0.0\",\n    \"port\": 9001,\n    \"reload\": false\n  },\n  \"llm_emulation\": {\n    \"enabled\": true,\n    \"default_model\": \"conti-default\",\n    \"streaming_enabled\": true,\n    \"mode\": \"nanobot_serve\",\n    \"serve_profile\": \"conti-llm-serve\",\n    \"serve_base_url\": \"http://127.0.0.1:8765\"\n  },\n  \"providers\": {\n    \"active\": \"openai_compatible\",\n    \"openai_compatible\": {\n      \"api_base\": \"${OPENAI_BASE_URL}\",\n      \"api_key_env\": \"***REDACTED***\"\n    }\n  },\n  \"paths\": {\n    \"home_root\": \"/home/nanobot\",\n    \"development_repo\": \"/desarrollo\",\n    \"production_repo\": \"/compose\",\n    \"onboarding_file\": \"/app/docs/onboarding.md\",\n    \"onboarding_brief_file\": \"/app/docs/onboarding_brief.md\",\n    \"rules_file\": \"/app/docs/rules.md\"\n  },\n  \"ui\": {\n    \"enabled\": true,\n    \"title\": \"Conti MCP Console\"\n  },\n  \"rag\": {\n    \"base_url\": \"http://flamehaven:8000\",\n    \"api_key_env\": \"***REDACTED***\",\n    \"default_store\": \"default\"\n  },\n  \"odoo\": {\n    \"default_connection\": \"prod\",\n    \"default_lang\": \"es_AR\",\n    \"default_tz\": \"America/Argentina/Buenos_Aires\",\n    \"connect_timeout_seconds\": 30,\n    \"max_retries\": 3,\n    \"ocr_enabled\": true,\n    \"payment_proof_max_mb\": 1,\n    \"connections\": {\n      \"prod\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"demo\",\n        \"host_header\": \"demo.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"dev\": {\n        \"url\": \"http://odoo18_dev:8069\",\n        \"db\": \"demo\",\n        \"host_header\": null,\n        \"username_env\": \"ODOO_DEV_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_DEV_USER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"demo\",\n        \"default_password\": \"***REDACTED***\"\n      },\n      \"resto\": {\n        \"url\": \"http://odoo18:8069\",\n        \"db\": \"resto\",\n        \"host_header\": \"resto.contamela.com\",\n        \"username_env\": \"ODOO_USERNAME\",\n        \"password_env\": \"***REDACTED***\",\n        \"username_fallback_envs\": [\n          \"ODOO_USER\",\n          \"ODOOUSER\"\n        ],\n        \"password_fallback_envs\": \"***REDACTED***\",\n        \"default_username\": \"resto\",\n        \"default_password\": \"***REDACTED***\"\n      }\n    }\n  },\n  \"mercadopago\": {\n    \"access_token_env\": \"***REDACTED***\",\n    \"public_key_env\": \"***REDACTED***\",\n    \"sandbox_env\": \"MERCADOPAGO_SANDBOX\",\n    \"api_base_url\": \"https://api.mercadopago.com\",\n    \"success_url\": \"http://localhost:9001/odoo/mercadopago/success\",\n    \"failure_url\": \"http://localhost:9001/odoo/mercadopago/failure\",\n    \"pending_url\": \"http://localhost:9001/odoo/mercadopago/pending\",\n    \"notification_url\": \"http://localhost:9001/odoo/mercadopago/webhook\",\n    \"request_timeout_seconds\": 30\n  },\n  \"ocrl_sheet\": {\n    \"sheet_id\": \"1x3I9EvplbIk4q-To0BBjdUdKJyoOYUWzVgo_MwC2z7k\",\n    \"gid\": 0,\n    \"account_sheet_prefix\": \"CL\",\n    \"credentials_env\": \"OCRL_SHEET_CREDENTIALS_JSON\",\n    \"request_timeout_seconds\": 30\n  }\n}",
+        "user_prompt": "Analiza los Agentes Hermes Instalados en este contenedor y genera un reporte de sus configuraciones y habilidades en un archivo /contenedores/conti-backend/Agentes_hermes_doc.md",
+        "inject_governance": true,
+        "governance_chars": 22816
+      }
+    },
+    {
+      "event": "goal_sent",
+      "ts": 1783305105.3799508,
+      "data": {
+        "conversation_id": "8d2ee6cf-d08e-4ce7-be12-da185af73936",
+        "prompt_len": 23349
+      }
+    },
+    {
+      "event": "omp_execution_status",
+      "ts": 1783305136.7554977,
+      "data": {
+        "status": "running"
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305142.8192174,
+      "data": {
+        "tool": "list_directory",
+        "args": {},
+        "reasoning": "El usuario me pide analizar los Agentes Hermes instalados en el contenedor y generar un reporte de sus configuraciones y habilidades en un archivo específico. Necesito explorar el entorno para entender qué son los \"Agentes Hermes\" y dónde están configurados.\n\nPrimero, voy a explorar el directorio ac"
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305142.8192308,
+      "data": {
+        "tool": "list_directory",
+        "result": "Listed directory: /contenedores/conti-backend (69 entries)",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305142.8192425,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 504,
+        "completion_tokens": 1492,
+        "reasoning_tokens": 1485,
+        "cache_read_tokens": 448
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305142.819248,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 16634,
+        "completion_tokens": 1600,
+        "reasoning_tokens": 1563,
+        "cache_read_tokens": 2496
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305146.8538258,
+      "data": {
+        "tool": "list_directory",
+        "args": {},
+        "reasoning": "Voy a ver más detalles del directorio. Necesito entender la estructura y buscar información sobre Hermes."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305146.8538334,
+      "data": {
+        "tool": "list_directory",
+        "result": "Listed directory: /contenedores/conti-backend (69 entries)",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305146.8538425,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 32899,
+        "completion_tokens": 1666,
+        "reasoning_tokens": 1586,
+        "cache_read_tokens": 18560
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305150.90724,
+      "data": {
+        "tool": "list_directory",
+        "args": {},
+        "reasoning": "Necesito ver el contenido real. Voy a usar `list_directory` con el directorio raíz."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305150.9072487,
+      "data": {
+        "tool": "list_directory",
+        "result": "Listed directory: /contenedores/conti-backend (69 entries)",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305150.9072585,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 49257,
+        "completion_tokens": 1735,
+        "reasoning_tokens": 1610,
+        "cache_read_tokens": 34816
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305154.9523056,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "ls -la /contenedores/conti-backend"
+        },
+        "reasoning": "Parece que `list_directory` no está mostrando los archivos. Voy a usar el comando `ls` en el terminal para explorar."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305154.9523158,
+      "data": {
+        "tool": "terminal",
+        "result": "total 1040\ndrwxr-xr-x 25 nanobot nanobot   4096 Jul  5 23:29  .\ndrwxr-xr-x  3 root    root      4096 Jul  5 23:27  ..\ndrwxrwxr-x  9 nanobot nanobot   4096 Jul  5 21:19  .git\n-rw-rw-r--  1 nanobot nanobot   2000 Jun 24 21:54  .gitignore\n-rw-rw-r--  1 nanobot nanobot    311 Jun 24 21:54  .gitmodules\ndrwxrwxr-x  3 nanobot nanobot   4096 Jul  1 13:08  .ponytail\ndrwxrwxr-x  3 nanobot nanobot   4096 Apr 30 00:16  .pytest_cache\ndrwxrwxr-x  5 nanobot nanobot   4096 Jun 29 20:43  .ruff_cache\ndrwxrwxr-x  3 nanobot nanobot   4096 May 12 13:57  .sixth\ndrwxrwxr-x  5 nanobot nanobot   4096 Apr 30 00:16  .venv\n-rw-r--r--  1 nanobot nanobot  10995 Jul  5 21:15  Agentes_hermes_doc.md\n-rw-rw-r--  1 nanobot nanobot   4158 Jun 24 21:54  CARTA.PY\n-rw-rw-r--  1 nanobot nanobot  40547 Jun 24 21:54  CHAT.MD\n-rw-rw-r--  1 nanobot nanobot   4712 Jul  4 09:49  Dockerfile\n-rw-rw-r--  1 nanobot nanobot   3258 Jun 23 01:56 'Dockerfile copy'\n-rw-rw-r--  1 nanobot nanobot   2630 Jun 23 01:56  Dockerfile.old\n-rw-rw-r-",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305154.9523246,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 65711,
+        "completion_tokens": 1812,
+        "reasoning_tokens": 1640,
+        "cache_read_tokens": 51136
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305158.9987817,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Veo que ya existe un archivo `Agentes_hermes_doc.md` (10995 bytes). El usuario quiere que analice los Agentes Hermes instalados y genere un reporte. Primero debo ver el contenido de ese archivo existente para entender qué ya hay. Luego explorar qué son los Agentes Hermes. Veamos el archivo existente"
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305158.9988108,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /contenedores/conti-backend/Agentes_hermes_doc.md\n\n     1  # Reporte de Agentes Hermes Instalados\n     2  \n     3  ## Resumen Ejecutivo\n     4  \n     5  El contenedor `conti-backend` tiene instalado **Hermes Agent** (versión CLI) con **8 perfiles** configurados, cada uno especializado para diferentes operaciones de Contamela. Los perfiles comparten una base común de herramientas pero difieren en modelos LLM, skills instaladas y configuraciones específicas.\n     6  \n     7  ---\n     8  \n     9  ## 1. Infraestructura Hermes\n    10  \n    11  ### Binarios Instalados\n    12  - `hermes-agent` - Agente principal con capacidades de tool-calling\n    13  - `hermes` - CLI principal para gestión y operación\n    14  - `hermes-acp` - Servidor ACP (Agent Client Protocol)\n    15  \n    16  ### Directorios Clave\n    17  - **Perfiles base**: `/app/hermes_profiles/contihome/`\n    18  - **Perfiles específicos**: `/app/hermes_profiles/contihome/profiles/{perfil}/`\n    19  - **Caché y builds**: `/",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305158.9988203,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 84798,
+        "completion_tokens": 1945,
+        "reasoning_tokens": 1719,
+        "cache_read_tokens": 67584
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305165.158664,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "which hermes"
+        },
+        "reasoning": "Veo que ya existe un reporte bastante completo. Sin embargo, el usuario me pide que \"analice los Agentes Hermes Instalados en este contenedor y genere un reporte de sus configuraciones y habilidades\". Esto sugiere que quiere un análisis actualizado o quizás una verificación de que la información es "
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305165.158675,
+      "data": {
+        "tool": "terminal",
+        "result": "/usr/local/bin/hermes",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305165.1586845,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 108858,
+        "completion_tokens": 2091,
+        "reasoning_tokens": 1822,
+        "cache_read_tokens": 86656
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305167.2131011,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "ls -la /app/hermes_profiles/"
+        },
+        "reasoning": "Hermes está instalado. Ahora voy a explorar los directorios de perfiles para verificar la estructura."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305169.4120317,
+      "data": {
+        "tool": "terminal",
+        "result": "total 16\ndrwxrwxr-x  3 nanobot nanobot 4096 Jun  5 10:48 .\ndrwxr-xr-x  1 nanobot nanobot 4096 Jul  5 23:27 ..\ndrwx------ 18 nanobot nanobot 4096 Jul  5 23:32 contihome",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305169.4120457,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 133124,
+        "completion_tokens": 2164,
+        "reasoning_tokens": 1847,
+        "cache_read_tokens": 110656
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305171.4386358,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "ls -la /app/hermes_profiles/contihome/"
+        },
+        "reasoning": "Perfecto. Hay un directorio `contihome`. Voy a explorar su estructura."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305173.4628751,
+      "data": {
+        "tool": "terminal",
+        "result": "total 13932\ndrwx------ 18 nanobot nanobot    4096 Jul  5 23:32 .\ndrwxrwxr-x  3 nanobot nanobot    4096 Jun  5 10:48 ..\n-rw-rw-r--  1 nanobot nanobot     385 Jun 13 07:58 .env\n-rw-r--r--  1 nanobot nanobot     219 May 19 12:47 .hermes_history\n-rw-r--r--  1 nanobot nanobot       0 Jun  8 17:08 .scratch_tip_shown\n-rw-------  1 nanobot nanobot   61849 Jun  8 17:09 .skills_prompt_snapshot.json\n-rw-r--r--  1 nanobot nanobot      68 Jun 22 21:23 .update_check\n-rwxrwxr-x  1 nanobot nanobot    2147 May 16 15:25 SOUL.md\n-rw-r--r--  1 nanobot nanobot       6 Jun 13 07:58 active_profile\ndrwx------  2 nanobot nanobot    4096 May 16 16:50 audio_cache\n-rw-------  1 nanobot nanobot    2399 Jun 22 21:23 auth.json\n-rw-r--r--  1 nanobot nanobot       0 May 16 20:31 auth.lock\ndrwxr-xr-x  2 nanobot nanobot    4096 May 16 15:49 bin\ndrwxr-xr-x  3 nanobot nanobot    4096 Jul  5 21:11 cache\n-rw-------  1 nanobot nanobot     680 Jun 13 07:57 channel_directory.json\n-rw-rw-r--  1 nanobot nanobot   12302 Jun 24 21",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305173.462889,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 157609,
+        "completion_tokens": 2235,
+        "reasoning_tokens": 1866,
+        "cache_read_tokens": 134912
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305175.4912748,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "ls -la /app/hermes_profiles/contihome/profiles/"
+        },
+        "reasoning": "Excelente. Ahora voy a ver los perfiles dentro de `/app/hermes_profiles/contihome/profiles/`."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305177.515704,
+      "data": {
+        "tool": "terminal",
+        "result": "total 11532\ndrwxr-xr-x  9 nanobot nanobot     4096 Jun  3 23:09 .\ndrwx------ 18 nanobot nanobot     4096 Jul  5 23:32 ..\n-rw-r--r--  1 nanobot nanobot     2615 May 26 15:26 AGENTS.md\n-rw-r--r--  1 nanobot nanobot     1850 May 26 15:26 CONSTANTS.md\n-rwxr-xr-x  1 nanobot nanobot     3524 May 26 15:26 SOUL.md\n-rw-r--r--  1 nanobot nanobot     6819 May 26 15:26 TOOLS.md\ndrwx------ 23 nanobot nanobot     4096 Jul  5 23:29 catolico\ndrwx------ 18 nanobot nanobot     4096 Jul  5 23:29 mendoza\ndrwx------ 18 nanobot nanobot     4096 Jul  5 23:29 odoo\ndrwx------ 18 nanobot nanobot     4096 Jul  5 23:29 odoo-mendoza\ndrwx------ 14 nanobot nanobot     4096 Jul  5 23:29 odoo-nudo\ndrwx------ 14 nanobot nanobot     4096 Jul  5 23:29 odoo-resto\ndrwx------ 16 nanobot nanobot     4096 Jul  5 23:29 resto\n-rw-rw-r--  1 nanobot nanobot 11749280 Jun  3 23:09 resto.tgz",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305177.5157144,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 183690,
+        "completion_tokens": 2310,
+        "reasoning_tokens": 1891,
+        "cache_read_tokens": 159168
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305179.5514479,
+      "data": {
+        "tool": "terminal",
+        "args": {
+          "command": "cat /app/hermes_profiles/contihome/active_profile"
+        },
+        "reasoning": "Perfecto. Hay 7 perfiles (catolico, mendoza, odoo, odoo-mendoza, odoo-nudo, odoo-resto, resto) más el perfil default (que probablemente está en el directorio raíz de contihome). Voy a verificar el perfil default. Primero, voy a ver el archivo `active_profile` para saber cuál es el perfil activo."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305181.5765076,
+      "data": {
+        "tool": "terminal",
+        "result": "resto",
+        "ok": true,
+        "exit_code": 0
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305181.5765212,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 210341,
+        "completion_tokens": 2444,
+        "reasoning_tokens": 1977,
+        "cache_read_tokens": 185216
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305183.6211991,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "El perfil activo es `resto`. Ahora voy a explorar algunos archivos de configuración para entender mejor los perfiles. Primero, voy a ver el archivo `config.yaml` en el directorio raíz de contihome."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305183.621231,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /app/hermes_profiles/contihome/config.yaml\n\n     1  model:\n     2    default: deepseek-v4-flash\n     3    provider: deepseek\n     4    base_url: ''\n     5    api_mode: chat_completions\n     6    api_key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6Im9hdXRoL2dvb2dsZToxMDg3NDY4Njc5OTUwMjQ3ODY5MzAiLCJhcGlUb2tlblBlcHBlciI6bnVsbCwidmVyc2lvbiI6MywiaWF0IjoxNzczODQxNTU3LCJleHAiOjE5MzE1MjE1NTd9.Y4JwaJ7Jl-slgeIfCzPuPgv-BaHyvuNTHj25ojqp0IE\n     7  providers:\n     8    kilocode:\n     9      api: https://api.kilo.ai/api/gateway\n    10  fallback_providers: []\n    11  credential_pool_strategies: {}\n    12  toolsets:\n    13  - hermes-cli\n    14  agent:\n    15    max_turns: 90\n    16    gateway_timeout: 1800\n    17    restart_drain_timeout: 180\n    18    api_max_retries: 3\n    19    service_tier: ''\n    20    tool_use_enforcement: auto\n    21    task_completion_guidance: true\n    22    environment_probe: true\n    23    environment_hint: ''\n    24    gatew",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305183.621242,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 237183,
+        "completion_tokens": 2541,
+        "reasoning_tokens": 2028,
+        "cache_read_tokens": 211840
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305189.69371,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Excelente. Ahora tengo la configuración principal. También necesito ver los archivos SOUL.md de cada perfil para entender sus personalidades y propósitos. Voy a empezar con el perfil `resto` que está activo."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305189.6937284,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /app/hermes_profiles/contihome/profiles/resto/SOUL.md\n\n     1  # SOUL.md — Mozo Virtual Resto\n     2  \n     3  Soy un mozo virtual que atiende pedidos de clientes, amable, servicial y respetuoso. Mi misión es ofrecer los mejores productos que se adecuen al perfil y gusto del cliente, ya sea en precio, recetas, gusto o tiempo de preparación, siempre en el menor tiempo posible pero dando todo el tiempo que el cliente necesite para elegir, brindándole sugerencias a partir de mis herramientas.\n     4  \n     5  ## Identidad\n     6  - **Nombre:** Mesero Inteligente\n     7  - **Idioma:** Todas mis respuestas son en Español\n     8  - **Tono:** Cálido, cercano y respetuoso. Sin exceso de formalidad pero siempre muy servicial.\n     9  - **Público:** Comensales del restaurante - café que vienen a desayunar, almorzar, merendar o cenar.\n    10  \n    11  ## Reglas Fundamentales\n    12  \n    13  ### 2. Fuentes y precisión\n    14  - **Nunca inventes** siempre consulta tus herramientas, skil",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305189.6937373,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 270705,
+        "completion_tokens": 2644,
+        "reasoning_tokens": 2077,
+        "cache_read_tokens": 238656
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305191.737849,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Ahora voy a ver el archivo `TOOLS.md` del perfil resto para entender las herramientas disponibles."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305191.7378716,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /app/hermes_profiles/contihome/profiles/resto/TOOLS.md\n\n     1  # TOOLS.md — Guía de Herramientas MCP (conti_mcp)\n     2  \n     3  Todas las herramientas se llaman al servidor MCP en `http://odoo18:8069/mcp`\n     4  con headers:\n     5  - `Authorization: Bearer sk-conti-mcp-write`\n     6  - `X-Odoo-Database: {tenant_id}`   ← **NOT** `X-Odoo-DB`\n     7  \n     8  El `tenant_id` llega en el bloque `<context>` del sistema. NO preguntar al usuario.\n     9  \n    10  ---\n    11  \n    12  ## ⚠️ REGLAS CRÍTICAS\n    13  \n    14  ### 1. Cambios de estado en cocina\n    15  **NUNCA usar `update_records` ni `call_method` para cambiar `order_status` en pedidos de cocina.**\n    16  La pantalla de cocina usa notificaciones `bus.bus` específicas. Usar SIEMPRE las skills dedicadas:\n    17  \n    18  | Acción | Skill a usar | Método interno |\n    19  |--------|-------------|----------------|\n    20  | Cocina terminó → pasar a **Listo** | `kitchen_mark_ready` | `order_progress_draft()` |\n    21  ",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305191.737881,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 307616,
+        "completion_tokens": 2717,
+        "reasoning_tokens": 2098,
+        "cache_read_tokens": 272128
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305195.7995539,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Ahora voy a explorar los otros perfiles para obtener una visión completa. Primero, voy a ver el perfil `default` (que probablemente está en el directorio raíz de contihome)."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305195.7995756,
+      "data": {
+        "tool": "read_file",
+        "result": "Read file: /app/hermes_profiles/contihome/SOUL.md\n\n     1  # SOUL.md - Who You Are\n     2  \n     3  Soy Conti, el asistente virtual y SysAdmin de Contamela.com. Mi propósito es asistir a Luis Dalmasso en arquitectura, despliegue, desarrollo y mantenimiento de la infraestructura en producción (Django, n8n, Odoo, RAG, WhatsApp).\n     4  \n     5  ## Core Truths\n     6  1. **Acción sobre palabras:** Salta los \"¡Gran pregunta!\" o \"Estaré encantado\". Solo entrega soluciones, comandos o código.\n     7  2. **Pensamiento Crítico:** Si una arquitectura es ineficiente, dilo. No seas un simple buscador.\n     8  3. **Idioma:** Todas las respuestas DEBEN ser en Español.\n     9  4. **Consulta Documental Obligatoria:** Si la tarea involucra reglas de negocio o despliegues complejos, SIEMPRE lee primero los archivos en `/home/conti/.nanobot/workspace/Documentacion`  antes de proponer una solución.\n    10  5. **Lee el archivo CONSTANTS.md y sigue estrictamente las reglas\n    11  6. ** Es obilgatorio usa",
+        "ok": true,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "omp_tokens",
+      "ts": 1783305195.7995842,
+      "data": {
+        "model": "openai/mimo-v2.5-pro",
+        "prompt_tokens": 347803,
+        "completion_tokens": 2810,
+        "reasoning_tokens": 2143,
+        "cache_read_tokens": 308992
+      }
+    },
+    {
+      "event": "omp_tool_start",
+      "ts": 1783305197.840593,
+      "data": {
+        "tool": "read_file",
+        "args": {},
+        "reasoning": "Ahora voy a ver el archivo `CONSTANTS.md` del perfil default para entender las reglas de negocio."
+      }
+    },
+    {
+      "event": "omp_tool_end",
+      "ts": 1783305197.8406024,
+      "data": {
+        "tool": "read_file",
+        "result": "Error: File not found: /app/hermes_profiles/contihome/CONSTANTS.md",
+        "ok": false,
+        "exit_code": null
+      }
+    },
+    {
+      "event": "openhands_orchestrator_end",
+      "ts": 1783305707.2670255,
+      "data": {
+        "conversation_id": "8d2ee6cf-d08e-4ce7-be12-da185af73936",
+        "response_len": 1689,
+        "status": "ok"
+      }
+    },
+    {
+      "event": "end",
+      "ts": 1783305707.2685988,
+      "data": {
+        "duration_s": 602.023
+      }
+    }
+  ]
+}
