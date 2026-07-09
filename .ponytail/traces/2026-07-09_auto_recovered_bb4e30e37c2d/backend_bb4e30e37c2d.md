@@ -1,5 +1,5 @@
 ---
-trace_id: trace-auto-1783571904245
+trace_id: trace-auto-1783571966224
 circuit: backend
 session_id: bb4e30e37c2d
 conversation_id: 58a95ee5-bb8f-4365-8a92-a99dcb56dc33
@@ -7,9 +7,9 @@ turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
 started_at: 2026-07-09T01:37:23.544720
-ended_at: 2026-07-09T01:38:05.788169
-duration_s: 42.2
-events_count: 1
+ended_at: 2026-07-09T01:38:52.043697
+duration_s: 88.5
+events_count: 13
 tokens:
   input_nuevos: 0
   cache_read: 0
@@ -21,7 +21,7 @@ tokens:
   ultimo_delta: 0
 llm_calls: 0
 tools_executed:
-  (none)
+  Read: 6
 ---
 
 ## Turn 1: ---
@@ -32,9 +32,9 @@ Ejecutá: python3 /contenedores/conti-backend/trace_regen.py --dry-run --circuit
 - **Conversación OpenHands/OMP**: [`58a95ee5-bb8f-4365-8a92-a99dcb56dc33`](http://localhost:3012/conversations/58a95ee5-bb8f-4365-8a92-a99dcb56dc33)
 - **Workspace**: `/contenedores/conti-backend`
 - **Inicio**: 2026-07-09T01:37:23.544720
-- **Fin**: 2026-07-09T01:38:05.788169
-- **Duración**: 42.2s
-- **Eventos**: 1
+- **Fin**: 2026-07-09T01:38:52.043697
+- **Duración**: 1m 28s
+- **Eventos**: 13
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -154,9 +154,21 @@ gantt
     axisFormat  %H:%M:%S
 
     section Ejecución
+    Read (0.1s)  :done, 01:38:41, 0.1s
+    Read (0.1s)  :done, 01:38:43, 0.1s
+    Read (0.1s)  :done, 01:38:46, 0.1s
+    Read (0.1s)  :done, 01:38:46, 0.1s
+    Read (0.1s)  :done, 01:38:51, 0.1s
+    Read (0.1s)  :done, 01:38:52, 0.1s
 ```
 
-## Tools Ejecutadas (0)
+## Tools Ejecutadas (6)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
+| 1 | `Read` | 01:38:41 | 0.1s | ✅ | [trace_regen.py#17AC] 1:#!/usr/bin/env python3 2:""" … 12:""" 13: 14:from __future__ import annotations … 24:from typing |
+| 2 | `Read` | 01:38:43 | 0.1s | ✅ | [trace_regen.py#17AC] 1:#!/usr/bin/env python3 2:""" … 12:""" 13: 14:from __future__ import annotations … 24:from typing |
+| 3 | `Read` | 01:38:46 | 0.1s | ✅ | [trace_regen.py#17AC] 57: 58:def list_conversations() -> list[dict]: 59:    """Lista todas las conversaciones del Agent  |
+| 4 | `Read` | 01:38:46 | 0.1s | ✅ | [trace_regen.py#17AC] 291: 292:# ── Main ────────────────────────────────────────────────────────────── 293: 294:def mai |
+| 5 | `Read` | 01:38:51 | 0.1s | ✅ | [trace_regen.py#17AC] 214: 215:def generate_trace_md( 216:    conv_id: str, 217:    circuit: str, 218:    conv_meta: dic |
+| 6 | `Read` | 01:38:52 | 0.1s | ✅ | [trace_regen.py#17AC] 117: 118:def detect_circuit(events: list[dict], conv_meta: dict) -> str: 119:    """Detecta el cir |
