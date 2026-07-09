@@ -1,40 +1,38 @@
 ---
-trace_id: trace-auto-1783608514526
+trace_id: trace-1783608516096
 circuit: backend
 session_id: 428b1f73ca9c
 conversation_id: 6dbac533-1149-43cc-8452-ad0e3ee9f3c2
 turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-09T11:48:13.677129
-ended_at: 2026-07-09T11:48:30.988874
-duration_s: 17.3
-events_count: 6
+started_at: 2026-07-09T11:48:36.053575
+ended_at: 2026-07-09T11:48:36.053575
+duration_s: 0.0
+events_count: 0
 tokens:
-  input_nuevos: 4091
-  cache_read: 44800
-  total_input: 48891
-  cache_hit_pct: 91.6%
-  completion: 263
+  input_nuevos: 0
+  cache_read: 0
+  total_input: 0
+  cache_hit_pct: 0.0%
+  completion: 0
   reasoning: 0
-  total: 49154
-  ultimo_delta: 4354
-llm_calls: 1
+  total: 0
+  ultimo_delta: 0
+llm_calls: 0
 tools_executed:
-  terminal: 1
+  (none)
 ---
 
-## Turn 1: ---
-
-Ejecutá: python3 -c "import urllib.request,json; r=urllib.request.urlopen(\"http://172.18.0.4:3...
+## Turn 1: Ejecutá: python3 -c "import urllib.request,json; r=urllib.request.urlopen(\"http://172.18.0.4:3000/a...
 
 - **Circuito**: `backend`
 - **Conversación OpenHands/OMP**: [`6dbac533-1149-43cc-8452-ad0e3ee9f3c2`](http://localhost:3012/conversations/6dbac533-1149-43cc-8452-ad0e3ee9f3c2)
 - **Workspace**: `/contenedores/conti-backend`
-- **Inicio**: 2026-07-09T11:48:13.677129
-- **Fin**: 2026-07-09T11:48:30.988874
-- **Duración**: 17.3s
-- **Eventos**: 6
+- **Inicio**: 2026-07-09T11:48:36.053575
+- **Fin**: 2026-07-09T11:48:36.053575
+- **Duración**: 0.0s
+- **Eventos**: 0
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -118,30 +116,11 @@ Cuando necesites reglas completas: `get_rules(circuit="backend")` via MCP
 Cuando necesites onboarding completo: `get_onboarding(circuit="backend")` via MCP
 Cuando necesites el layout del repo: `get_architecture(project="contenedores-conti-backend")` via MCP
 
-
----
-
-# Circuit: backend
-Workspace: /contenedores/conti-backend
-
-
----
-
-# Búsqueda de código
-
-Tenés acceso a codebase-memory-mcp como MCP server.
-Herramientas: search_graph, get_architecture, trace_path, get_code_snippet, query_graph.
-Projects indexados: desarrollo (153K nodos), compose (134K), contenedores-conti-backend (4.4K).
-
-
----
 ```
 
 ### User Task
 
 ```text
----
-
 Ejecutá: python3 -c "import urllib.request,json; r=urllib.request.urlopen(\"http://172.18.0.4:3000/api/conversations/18553f6727be47edaa796a52e3e4cbc4\",timeout=10); d=json.loads(r.read()); print(d.get(\"workspace\",{}).get(\"working_dir\",\"MISSING\"))"
 ```
 
@@ -154,23 +133,15 @@ gantt
     axisFormat  %H:%M:%S
 
     section Ejecución
-    terminal (0.1s)  :done, 11:48:28, 0.1s
 ```
 
-## Tools Ejecutadas (1)
+## Tools Ejecutadas (0)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
-| 1 | `terminal` | 11:48:28 | 0.1s | ✅ | /desarrollo |
 
 ## Respuesta del Agente
 
 `/desarrollo`
 
 Eso es el `workspace.working_dir` de la conversación `18553f6727be47edaa796a52e3e4cbc4`.
-
-## Tokens por Llamada LLM
-
-| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
-|---|-------|------------|-------------|---------|------------|-----------|-------|
-| 1 | 4,091 | 44,800 | 48,891 | 91.6% | 263 | 0 | 4,354 |
