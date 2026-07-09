@@ -1,40 +1,38 @@
 ---
-trace_id: trace-auto-1783611017028
+trace_id: trace-1783611038642
 circuit: backend
 session_id: e922a37af1a9
 conversation_id: 229a3112-0a80-46ae-b513-5a8ca7de0f07
 turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-09T12:29:59.068559
-ended_at: 2026-07-09T12:30:13.989727
-duration_s: 14.9
-events_count: 1
+started_at: 2026-07-09T12:30:29.135114
+ended_at: 2026-07-09T12:30:38.333224
+duration_s: 9.2
+events_count: 5
 tokens:
-  input_nuevos: 0
-  cache_read: 0
-  total_input: 0
-  cache_hit_pct: 0.0%
-  completion: 0
+  input_nuevos: 10020
+  cache_read: 44736
+  total_input: 54756
+  cache_hit_pct: 81.7%
+  completion: 264
   reasoning: 0
-  total: 0
-  ultimo_delta: 0
-llm_calls: 0
+  total: 55020
+  ultimo_delta: 10284
+llm_calls: 1
 tools_executed:
-  (none)
+  terminal: 1
 ---
 
-## Turn 1: ---
-
-Ejecutá: python3 /contenedores/conti-backend/trace_regen.py 2>&1 | tail -20
+## Turn 1: Ejecutá: python3 /contenedores/conti-backend/trace_regen.py 2>&1 | tail -20
 
 - **Circuito**: `backend`
 - **Conversación OpenHands/OMP**: [`229a3112-0a80-46ae-b513-5a8ca7de0f07`](http://localhost:3012/conversations/229a3112-0a80-46ae-b513-5a8ca7de0f07)
 - **Workspace**: `/contenedores/conti-backend`
-- **Inicio**: 2026-07-09T12:29:59.068559
-- **Fin**: 2026-07-09T12:30:13.989727
-- **Duración**: 14.9s
-- **Eventos**: 1
+- **Inicio**: 2026-07-09T12:30:29.135114
+- **Fin**: 2026-07-09T12:30:38.333224
+- **Duración**: 9.2s
+- **Eventos**: 5
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -118,30 +116,11 @@ Cuando necesites reglas completas: `get_rules(circuit="backend")` via MCP
 Cuando necesites onboarding completo: `get_onboarding(circuit="backend")` via MCP
 Cuando necesites el layout del repo: `get_architecture(project="contenedores-conti-backend")` via MCP
 
-
----
-
-# Circuit: backend
-Workspace: /contenedores/conti-backend
-
-
----
-
-# Búsqueda de código
-
-Tenés acceso a codebase-memory-mcp como MCP server.
-Herramientas: search_graph, get_architecture, trace_path, get_code_snippet, query_graph.
-Projects indexados: desarrollo (153K nodos), compose (134K), contenedores-conti-backend (4.4K).
-
-
----
 ```
 
 ### User Task
 
 ```text
----
-
 Ejecutá: python3 /contenedores/conti-backend/trace_regen.py 2>&1 | tail -20
 ```
 
@@ -154,9 +133,27 @@ gantt
     axisFormat  %H:%M:%S
 
     section Ejecución
+    terminal (0.1s)  :done, 12:30:29, 0.1s
 ```
 
-## Tools Ejecutadas (0)
+## Tools Ejecutadas (1)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
+| 1 | `terminal` | 12:30:29 | 0.1s | ✅ | python3 /contenedores/conti-backend/trace_regen.py 2>&1 \| tail -20 |
+
+## Respuesta del Agente
+
+Script ejecutó limpio en 15.1s. Resumen:
+
+- **114 conversaciones** procesadas
+- **105 trazas generadas** exitosamente
+- **5 skip** (sin eventos)
+- **4 errores** de generación (conversaciones con solo 2 eventos — demasiado poco contenido para generar traza)
+- **0 crash** — todo OK
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 10,020 | 44,736 | 54,756 | 81.7% | 264 | 0 | 10,284 |
