@@ -1,5 +1,5 @@
 ---
-trace_id: trace-auto-1783572592641
+trace_id: trace-auto-1783572660551
 circuit: backend
 session_id: ae71575df28f
 conversation_id: 4d077719-1cc4-470d-b096-217254317cc2
@@ -7,9 +7,9 @@ turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
 started_at: 2026-07-09T01:45:34.524252
-ended_at: 2026-07-09T01:49:06.428394
-duration_s: 211.9
-events_count: 19
+ended_at: 2026-07-09T01:50:54.819524
+duration_s: 320.3
+events_count: 21
 tokens:
   input_nuevos: 0
   cache_read: 0
@@ -22,7 +22,7 @@ tokens:
 llm_calls: 0
 tools_executed:
   read:: 4
-  terminal: 5
+  terminal: 6
 ---
 
 ## Turn 1: ---
@@ -33,9 +33,9 @@ Ejecutá SIN timeout: python3 /contenedores/conti-backend/trace_regen.py --circu
 - **Conversación OpenHands/OMP**: [`4d077719-1cc4-470d-b096-217254317cc2`](http://localhost:3012/conversations/4d077719-1cc4-470d-b096-217254317cc2)
 - **Workspace**: `/contenedores/conti-backend`
 - **Inicio**: 2026-07-09T01:45:34.524252
-- **Fin**: 2026-07-09T01:49:06.428394
-- **Duración**: 3m 32s
-- **Eventos**: 19
+- **Fin**: 2026-07-09T01:50:54.819524
+- **Duración**: 5m 20s
+- **Eventos**: 21
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -164,9 +164,10 @@ gantt
     terminal (0.1s)  :done, 01:48:51, 0.1s
     read: (0.1s)  :done, 01:48:53, 0.1s
     terminal (0.1s)  :done, 01:48:59, 0.1s
+    terminal (0.1s)  :done, 01:49:53, 0.1s
 ```
 
-## Tools Ejecutadas (9)
+## Tools Ejecutadas (10)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
@@ -179,3 +180,4 @@ gantt
 | 7 | `terminal` | 01:48:51 | 0.1s | ✅ | curl -s http://172.18.0.4:3000/api/conversations?limit=1 \| head -c 200 |
 | 8 | `read:` | 01:48:53 | 0.1s | ✅ | [trace_regen.py#17AC] 57: 58:def list_conversations() -> list[dict]: 59:    """Lista todas las conversaciones del Agent  |
 | 9 | `terminal` | 01:48:59 | 0.1s | ✅ | wc -l /tmp/trace_regen.log && tail -3 /tmp/trace_regen.log |
+| 10 | `terminal` | 01:49:53 | 0.1s | ✅ | python3 -c " import tracemalloc tracemalloc.start() import sys sys.argv = ['trace_regen.py', '--circuit', 'backend'] sys |
