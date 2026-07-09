@@ -1,40 +1,38 @@
 ---
-trace_id: trace-auto-1783571392972
+trace_id: trace-1783571395268
 circuit: backend
 session_id: 3659a4c7e783
 conversation_id: bdd9e352-80d0-4d77-945b-5b36dd6bc8e9
 turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-09T01:29:33.084599
-ended_at: 2026-07-09T01:29:51.637828
-duration_s: 18.6
-events_count: 8
+started_at: 
+ended_at: 
+duration_s: 0.0
+events_count: 0
 tokens:
-  input_nuevos: 809
-  cache_read: 97536
-  total_input: 98345
-  cache_hit_pct: 99.2%
-  completion: 609
+  input_nuevos: 0
+  cache_read: 0
+  total_input: 0
+  cache_hit_pct: 0.0%
+  completion: 0
   reasoning: 0
-  total: 98954
-  ultimo_delta: 1418
-llm_calls: 1
+  total: 0
+  ultimo_delta: 0
+llm_calls: 0
 tools_executed:
-  terminal: 2
+  (none)
 ---
 
-## Turn 1: ---
-
-Ejecutá: curl -s http://127.0.0.1:3000/api/conversations/count 2>&1
+## Turn 1: Ejecutá: curl -s http://127.0.0.1:3000/api/conversations/count 2>&1
 
 - **Circuito**: `backend`
 - **Conversación OpenHands/OMP**: [`bdd9e352-80d0-4d77-945b-5b36dd6bc8e9`](http://localhost:3012/conversations/bdd9e352-80d0-4d77-945b-5b36dd6bc8e9)
 - **Workspace**: `/contenedores/conti-backend`
-- **Inicio**: 2026-07-09T01:29:33.084599
-- **Fin**: 2026-07-09T01:29:51.637828
-- **Duración**: 18.6s
-- **Eventos**: 8
+- **Inicio**: 
+- **Fin**: 
+- **Duración**: 0.0s
+- **Eventos**: 0
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -118,30 +116,11 @@ Cuando necesites reglas completas: `get_rules(circuit="backend")` via MCP
 Cuando necesites onboarding completo: `get_onboarding(circuit="backend")` via MCP
 Cuando necesites el layout del repo: `get_architecture(project="contenedores-conti-backend")` via MCP
 
-
----
-
-# Circuit: backend
-Workspace: /contenedores/conti-backend
-
-
----
-
-# Búsqueda de código
-
-Tenés acceso a codebase-memory-mcp como MCP server.
-Herramientas: search_graph, get_architecture, trace_path, get_code_snippet, query_graph.
-Projects indexados: desarrollo (153K nodos), compose (134K), contenedores-conti-backend (4.4K).
-
-
----
 ```
 
 ### User Task
 
 ```text
----
-
 Ejecutá: curl -s http://127.0.0.1:3000/api/conversations/count 2>&1
 ```
 
@@ -154,16 +133,12 @@ gantt
     axisFormat  %H:%M:%S
 
     section Ejecución
-    terminal (0.1s)  :done, 01:29:45, 0.1s
-    terminal (0.1s)  :done, 01:29:48, 0.1s
 ```
 
-## Tools Ejecutadas (2)
+## Tools Ejecutadas (0)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
-| 1 | `terminal` | 01:29:45 | 0.1s | ✅ | ss -tlnp \| grep :3000 \|\| echo "Nada escuchando en 3000" |
-| 2 | `terminal` | 01:29:48 | 0.1s | ✅ | netstat -tlnp 2>/dev/null \| grep :3000 \|\| lsof -i :3000 2>/dev/null \|\| echo "Nada escuchando en puerto 3000""{"command |
 
 ## Respuesta del Agente
 
@@ -195,9 +170,3 @@ gantt
 | `netstat`/`lsof` en `:3000` | vacío |
 
 **¿Qué sigue?** Si esperás que haya un servicio en ese puerto, hay que levantarlo primero. Si es una app Node/Next, algo tipo `npm run dev` o `npm start`. Si es otro servicio, decime cuál y lo levanto.
-
-## Tokens por Llamada LLM
-
-| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
-|---|-------|------------|-------------|---------|------------|-----------|-------|
-| 1 | 809 | 97,536 | 98,345 | 99.2% | 609 | 0 | 1,418 |
