@@ -1,5 +1,5 @@
 ---
-trace_id: trace-auto-1783572974355
+trace_id: trace-auto-1783573035283
 circuit: backend
 session_id: f8f2807bf34f
 conversation_id: 553ef2fe-8cd5-4d15-9c89-821a8f4a8012
@@ -7,9 +7,9 @@ turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
 started_at: 2026-07-09T01:55:43.302754
-ended_at: 2026-07-09T01:56:13.505392
-duration_s: 30.2
-events_count: 13
+ended_at: 2026-07-09T01:57:14.732434
+duration_s: 91.4
+events_count: 29
 tokens:
   input_nuevos: 0
   cache_read: 0
@@ -21,8 +21,8 @@ tokens:
   ultimo_delta: 0
 llm_calls: 0
 tools_executed:
-  read:: 3
-  terminal: 3
+  read:: 7
+  terminal: 7
 ---
 
 ## Turn 1: ---
@@ -33,9 +33,9 @@ Ejecutá en background: nohup python3 /contenedores/conti-backend/trace_regen.py
 - **Conversación OpenHands/OMP**: [`553ef2fe-8cd5-4d15-9c89-821a8f4a8012`](http://localhost:3012/conversations/553ef2fe-8cd5-4d15-9c89-821a8f4a8012)
 - **Workspace**: `/contenedores/conti-backend`
 - **Inicio**: 2026-07-09T01:55:43.302754
-- **Fin**: 2026-07-09T01:56:13.505392
-- **Duración**: 30.2s
-- **Eventos**: 13
+- **Fin**: 2026-07-09T01:57:14.732434
+- **Duración**: 1m 31s
+- **Eventos**: 29
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -161,9 +161,17 @@ gantt
     terminal (0.1s)  :done, 01:56:07, 0.1s
     read: (0.1s)  :done, 01:56:10, 0.1s
     read: (0.1s)  :done, 01:56:13, 0.1s
+    terminal (0.1s)  :done, 01:56:16, 0.1s
+    read: (0.1s)  :done, 01:56:19, 0.1s
+    read: (0.1s)  :done, 01:56:21, 0.1s
+    terminal (0.1s)  :done, 01:56:24, 0.1s
+    read: (0.1s)  :done, 01:56:27, 0.1s
+    read: (0.1s)  :done, 01:56:29, 0.1s
+    terminal (0.1s)  :done, 01:56:33, 0.1s
+    terminal (0.1s)  :done, 01:57:14, 0.1s
 ```
 
-## Tools Ejecutadas (6)
+## Tools Ejecutadas (14)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
@@ -173,3 +181,11 @@ gantt
 | 4 | `terminal` | 01:56:07 | 0.1s | ✅ | kill -0 94049 2>/dev/null; echo "exit=$?" |
 | 5 | `read:` | 01:56:10 | 0.1s | ✅ | [/tmp/trace_regen.log#9359] 1:Listando conversaciones via Agent Server API... 2: |
 | 6 | `read:` | 01:56:13 | 0.1s | ✅ | [trace_regen.py#4817] 1:#!/usr/bin/env python3 2:""" … 12:""" 13: 14:from __future__ import annotations … 24:from typing |
+| 7 | `terminal` | 01:56:16 | 0.1s | ✅ | cat /tmp/trace_regen.log && echo "---EOF---" |
+| 8 | `read:` | 01:56:19 | 0.1s | ✅ | [trace_regen.py#4817] 1:#!/usr/bin/env python3 2:""" … 12:""" 13: 14:from __future__ import annotations … 24:from typing |
+| 9 | `read:` | 01:56:21 | 0.1s | ✅ | [trace_regen.py#4817] 293: 294:def main(): 295:    parser = argparse.ArgumentParser(description="Regenerador de trazas d |
+| 10 | `terminal` | 01:56:24 | 0.1s | ✅ | wc -l /tmp/trace_regen.log |
+| 11 | `read:` | 01:56:27 | 0.1s | ✅ | [trace_regen.py#4817] 57: 58:def list_conversations() -> list[dict]: 59:    """Lista todas las conversaciones del Agent  |
+| 12 | `read:` | 01:56:29 | 0.1s | ✅ | [trace_regen.py#4817] 45: 46:def _api_get(path: str, timeout: int = 15) -> dict \| list \| None: 47:    """GET request to  |
+| 13 | `terminal` | 01:56:33 | 0.1s | ✅ | curl -s -m 5 "http://172.18.0.4:3000/api/conversations/search?limit=5&offset=0" 2>&1 \| head -50 |
+| 14 | `terminal` | 01:57:14 | 0.1s | ✅ | OK: 5 items |
