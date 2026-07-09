@@ -1,5 +1,5 @@
 ---
-trace_id: trace-auto-1783571716059
+trace_id: trace-auto-1783571777938
 circuit: backend
 session_id: 89750dd2d94a
 conversation_id: 7867aac4-a6a2-4f67-8958-f8ac793cb275
@@ -7,8 +7,8 @@ turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
 started_at: 2026-07-09T01:35:06.077909
-ended_at: 2026-07-09T01:35:06.159046
-duration_s: 0.1
+ended_at: 2026-07-09T01:35:26.095533
+duration_s: 20.0
 events_count: 1
 tokens:
   input_nuevos: 0
@@ -32,8 +32,8 @@ Ejecutá: python3 /contenedores/conti-backend/trace_regen.py --dry-run 2>&1 | he
 - **Conversación OpenHands/OMP**: [`7867aac4-a6a2-4f67-8958-f8ac793cb275`](http://localhost:3012/conversations/7867aac4-a6a2-4f67-8958-f8ac793cb275)
 - **Workspace**: `/contenedores/conti-backend`
 - **Inicio**: 2026-07-09T01:35:06.077909
-- **Fin**: 2026-07-09T01:35:06.159046
-- **Duración**: 0.1s
+- **Fin**: 2026-07-09T01:35:26.095533
+- **Duración**: 20.0s
 - **Eventos**: 1
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
