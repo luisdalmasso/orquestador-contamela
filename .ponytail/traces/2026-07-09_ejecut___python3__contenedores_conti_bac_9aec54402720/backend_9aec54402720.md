@@ -1,14 +1,14 @@
 ---
-trace_id: trace-1783608560605
+trace_id: trace-auto-1783608578232
 circuit: backend
 session_id: 9aec54402720
 conversation_id: a8dc26bb-7d6a-47c3-bc17-a36031b81767
-turns: 1
+turns: 2
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-09T11:48:58.768814
-ended_at: 2026-07-09T11:49:16.087669
-duration_s: 17.3
+started_at: 2026-07-09T11:48:58.782884
+ended_at: 2026-07-09T11:49:20.597534
+duration_s: 39.1
 events_count: 6
 tokens:
   input_nuevos: 296
@@ -19,7 +19,7 @@ tokens:
   reasoning: 0
   total: 49016
   ultimo_delta: 504
-llm_calls: 1
+llm_calls: 2
 tools_executed:
   terminal: 1
 ---
@@ -129,6 +129,65 @@ Ejecutá: python3 /contenedores/conti-backend/trace_regen.py --conversation 1855
 ```mermaid
 gantt
     title Ejecución Turn 1 - backend
+    dateFormat  HH:mm:ss
+    axisFormat  %H:%M:%S
+
+    section Ejecución
+    terminal (0.1s)  :done, 11:49:12, 0.1s
+```
+
+## Tools Ejecutadas (1)
+
+| # | Tool | Inicio | Duración | OK | Args/Result |
+|---|------|--------|----------|-----|-------------|
+| 1 | `terminal` | 11:49:12 | 0.1s | ✅ | cd /contenedores/conti-backend && python3 trace_regen.py --conversation 18553f67-27be-47ed-aa79-6a52e3e4cbc4 2>&1 \| head |
+
+## Respuesta del Agente
+
+Listo. Procesó la conversación `18553f67` — 513 eventos del circuito backend, generó 1 traza de 63201 chars en ~1.8s.
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 296 | 48,512 | 48,808 | 99.4% | 208 | 0 | 504 |
+
+
+---
+
+## Turn 2: # Layer 0 — Governance Backend (~150 líneas)
+# Inyectado SIEMPRE en el primer prompt. On-demand via ...
+
+- **Circuito**: `backend`
+- **Conversación OpenHands/OMP**: [`a8dc26bb-7d6a-47c3-bc17-a36031b81767`](http://localhost:3012/conversations/a8dc26bb-7d6a-47c3-bc17-a36031b81767)
+- **Workspace**: `/contenedores/conti-backend`
+- **Inicio**: 2026-07-09T11:48:58.782884
+- **Fin**: 2026-07-09T11:49:20.597534
+- **Duración**: 21.8s
+- **Eventos**: 6
+
+## Prompt Completo
+
+```text
+# Layer 0 — Governance Backend (~150 líneas)
+# Inyectado SIEMPRE en el primer prompt. On-demand via MCP: get_onboarding(circuit="backend"), get_rules(circuit="backend")
+
+# Ponytail, lazy senior dev mode
+
+You are a lazy senior developer. Lazy means efficient, not careless. The best code is the code never written.
+
+Before writing any code, stop at the first rung that holds:
+
+1. Does this need to be built at all? (YAGNI)
+2. Does it already exist in this codebase? Reuse.
+3. Does the standard library
+```
+
+## Timeline (Gantt)
+
+```mermaid
+gantt
+    title Ejecución Turn 2 - backend
     dateFormat  HH:mm:ss
     axisFormat  %H:%M:%S
 
