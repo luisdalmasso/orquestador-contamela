@@ -1,40 +1,38 @@
 ---
-trace_id: trace-auto-1783571584269
+trace_id: trace-1783571598707
 circuit: backend
 session_id: 591d41109a3e
 conversation_id: d7cb2a65-7dd2-4823-b465-88e28dba1c23
 turns: 1
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-09T01:33:00.191269
-ended_at: 2026-07-09T01:33:00.206720
-duration_s: 0.0
-events_count: 1
+started_at: 2026-07-09T01:33:10.194745
+ended_at: 2026-07-09T01:33:18.687899
+duration_s: 8.5
+events_count: 5
 tokens:
-  input_nuevos: 0
-  cache_read: 0
-  total_input: 0
-  cache_hit_pct: 0.0%
-  completion: 0
+  input_nuevos: 4009
+  cache_read: 44672
+  total_input: 48681
+  cache_hit_pct: 91.8%
+  completion: 112
   reasoning: 0
-  total: 0
-  ultimo_delta: 0
-llm_calls: 0
+  total: 48793
+  ultimo_delta: 4121
+llm_calls: 1
 tools_executed:
-  (none)
+  terminal: 1
 ---
 
-## Turn 1: ---
-
-Ejecutá: curl -s --connect-timeout 5 http://172.18.0.4:3000/api/conversations/count 2>&1
+## Turn 1: Ejecutá: curl -s --connect-timeout 5 http://172.18.0.4:3000/api/conversations/count 2>&1
 
 - **Circuito**: `backend`
 - **Conversación OpenHands/OMP**: [`d7cb2a65-7dd2-4823-b465-88e28dba1c23`](http://localhost:3012/conversations/d7cb2a65-7dd2-4823-b465-88e28dba1c23)
 - **Workspace**: `/contenedores/conti-backend`
-- **Inicio**: 2026-07-09T01:33:00.191269
-- **Fin**: 2026-07-09T01:33:00.206720
-- **Duración**: 0.0s
-- **Eventos**: 1
+- **Inicio**: 2026-07-09T01:33:10.194745
+- **Fin**: 2026-07-09T01:33:18.687899
+- **Duración**: 8.5s
+- **Eventos**: 5
 
 ## Prompt Inyectado (Layer 0 governance + user prompt)
 
@@ -118,30 +116,11 @@ Cuando necesites reglas completas: `get_rules(circuit="backend")` via MCP
 Cuando necesites onboarding completo: `get_onboarding(circuit="backend")` via MCP
 Cuando necesites el layout del repo: `get_architecture(project="contenedores-conti-backend")` via MCP
 
-
----
-
-# Circuit: backend
-Workspace: /contenedores/conti-backend
-
-
----
-
-# Búsqueda de código
-
-Tenés acceso a codebase-memory-mcp como MCP server.
-Herramientas: search_graph, get_architecture, trace_path, get_code_snippet, query_graph.
-Projects indexados: desarrollo (153K nodos), compose (134K), contenedores-conti-backend (4.4K).
-
-
----
 ```
 
 ### User Task
 
 ```text
----
-
 Ejecutá: curl -s --connect-timeout 5 http://172.18.0.4:3000/api/conversations/count 2>&1
 ```
 
@@ -154,9 +133,21 @@ gantt
     axisFormat  %H:%M:%S
 
     section Ejecución
+    terminal (0.1s)  :done, 01:33:13, 0.1s
 ```
 
-## Tools Ejecutadas (0)
+## Tools Ejecutadas (1)
 
 | # | Tool | Inicio | Duración | OK | Args/Result |
 |---|------|--------|----------|-----|-------------|
+| 1 | `terminal` | 01:33:13 | 0.1s | ✅ | curl -s --connect-timeout 5 http://172.18.0.4:3000/api/conversations/count 2>&1 |
+
+## Respuesta del Agente
+
+El endpoint devolvió **94** conversaciones.
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 4,009 | 44,672 | 48,681 | 91.8% | 112 | 0 | 4,121 |
