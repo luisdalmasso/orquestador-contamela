@@ -1,14 +1,14 @@
 ---
-trace_id: trace-1783569351944
+trace_id: trace-auto-1783569355226
 circuit: backend
 session_id: 1d0d75dfed71
 conversation_id: ababc99a-6965-43e6-9355-d9f79e3384ff
-turns: 1
+turns: 2
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-09T00:55:33.865020
-ended_at: 2026-07-09T00:55:48.651813
-duration_s: 14.8
+started_at: 2026-07-09T00:55:33.880973
+ended_at: 2026-07-09T00:55:51.926108
+duration_s: 32.8
 events_count: 6
 tokens:
   input_nuevos: 8539
@@ -19,7 +19,7 @@ tokens:
   reasoning: 0
   total: 49824
   ultimo_delta: 8864
-llm_calls: 1
+llm_calls: 2
 tools_executed:
   Search: 1
 ---
@@ -129,6 +129,76 @@ Ejecutá: grep -r conversations /contenedores/conti-backend/app/openhands_agent/
 ```mermaid
 gantt
     title Ejecución Turn 1 - backend
+    dateFormat  HH:mm:ss
+    axisFormat  %H:%M:%S
+
+    section Ejecución
+    Search (0.1s)  :done, 00:55:41, 0.1s
+```
+
+## Tools Ejecutadas (1)
+
+| # | Tool | Inicio | Duración | OK | Args/Result |
+|---|------|--------|----------|-----|-------------|
+| 1 | `Search` | 00:55:41 | 0.1s | ✅ | [app/openhands_agent/open_hands_service.py#20F0]  46:    Flujo: *47:    1. POST /api/conversations → crea conversación c |
+
+## Respuesta del Agente
+
+20 matches en `open_hands_service.py`. Todas las referencias a `/api/conversations` son llamadas HTTP al SDK de OpenHands — flujo completo:
+
+| Línea | Contexto |
+|-------|----------|
+| 47-49 | Docstring: flujo paso a paso (`POST /api/conversations`, `POST .../goal`, `GET .../events`) |
+| 409, 416 | `persistence_dir` usa `conversations/{conv_id}` |
+| 447 | `POST /api/conversations` — crea conversación |
+| 463 | `GET /api/conversations/{id}` — health check |
+| 487 | `POST .../goal` — envía prompt |
+| 500 | `GET .../{id}` — poll estado |
+| 517, 565, 604 | `GET .../events/search` — busca eventos |
+| 544 | `GET .../agent_final_response` — respuesta final |
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 8,539 | 40,960 | 49,499 | 82.7% | 325 | 0 | 8,864 |
+
+
+---
+
+## Turn 2: # Layer 0 — Governance Backend (~150 líneas)
+# Inyectado SIEMPRE en el primer prompt. On-demand via ...
+
+- **Circuito**: `backend`
+- **Conversación OpenHands/OMP**: [`ababc99a-6965-43e6-9355-d9f79e3384ff`](http://localhost:3012/conversations/ababc99a-6965-43e6-9355-d9f79e3384ff)
+- **Workspace**: `/contenedores/conti-backend`
+- **Inicio**: 2026-07-09T00:55:33.880973
+- **Fin**: 2026-07-09T00:55:51.926108
+- **Duración**: 18.0s
+- **Eventos**: 6
+
+## Prompt Completo
+
+```text
+# Layer 0 — Governance Backend (~150 líneas)
+# Inyectado SIEMPRE en el primer prompt. On-demand via MCP: get_onboarding(circuit="backend"), get_rules(circuit="backend")
+
+# Ponytail, lazy senior dev mode
+
+You are a lazy senior developer. Lazy means efficient, not careless. The best code is the code never written.
+
+Before writing any code, stop at the first rung that holds:
+
+1. Does this need to be built at all? (YAGNI)
+2. Does it already exist in this codebase? Reuse.
+3. Does the standard library
+```
+
+## Timeline (Gantt)
+
+```mermaid
+gantt
+    title Ejecución Turn 2 - backend
     dateFormat  HH:mm:ss
     axisFormat  %H:%M:%S
 
