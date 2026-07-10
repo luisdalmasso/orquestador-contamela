@@ -27,10 +27,14 @@ def root_redirect() -> RedirectResponse:
     return RedirectResponse(url="/ui", status_code=307)
 
 
-@router.get("/ui", summary="Panel Principal de UI")
-def ui_index(request: Request):
+@router.get("/ui", summary="Dashboard Principal")
+def ui_dashboard(request: Request):
+    from app.services.dashboard_service import get_dashboard_service
+
+    dashboard = get_dashboard_service().get_dashboard()
     context = _build_base_context(request)
-    return templates.TemplateResponse(request, "index.html", context)
+    context["dashboard"] = dashboard
+    return templates.TemplateResponse(request, "dashboard.html", context)
 
 
 @router.get("/ui/settings", summary="Configuraciones del Sistema")
@@ -166,16 +170,16 @@ def _build_base_context(request: Request) -> dict:
         "backend_status": backend_status,
         "tools": tools,
         "tools_count": len(tools),
-        "onboarding": onboarding,
-        "onboarding_brief": onboarding_brief,
-        "rules": rules,
-        "git_summary": git_summary,
         "nav_items": [
-            {"href": "/ui", "label": "Estado"},
-            {"href": "/ui/settings", "label": "Settings"},
+            {"href": "/ui", "label": "Dashboard"},
+            {"href": "/ui/circuits", "label": "Circuitos"},
+            {"href": "/ui/hermes", "label": "Hermes"},
+            {"href": "/ui/omp", "label": "OMP"},
             {"href": "/ui/tools", "label": "Tools"},
-            {"href": "/ui/rules", "label": "Onboarding / Rules"},
-            {"href": "/ui/nanobots", "label": "Nanobots"},
+            {"href": "/ui/tenants", "label": "Tenants"},
+            {"href": "/ui/observability", "label": "Observabilidad"},
+            {"href": "/ui/services", "label": "Servicios"},
+            {"href": "/ui/security", "label": "Seguridad"},
         ],
     }
 

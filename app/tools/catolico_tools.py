@@ -1,3 +1,8 @@
+import logging
+import os
+
+log = logging.getLogger("conti.catolico_tools")
+
 from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
@@ -508,14 +513,22 @@ def catolico_resumir_documento(config, args: dict) -> dict:
 
     # ── 4. Ejecutar spinedigest ──
     env = os.environ.copy()
-    # Credenciales LLM (Gemini)
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key:
-        env["SPINEDIGEST_LLM_PROVIDER"] = "google"
-        env["SPINEDIGEST_LLM_MODEL"] = "gemini-2.0-flash"
-        env["SPINEDIGEST_LLM_API_KEY"] = gemini_key
-    # Asegurar que el prompt viaja como var de entorno (evita escaping en CLI)
-    env["SPINEDIGEST_PROMPT"] = prompt
+    # Credenciales LLM — lee de env vars (configurables en .env)
+    # Default: Google Gemini (fallback si no se configura otro provider)
+    llm_provider = env.get("SPINEDIGEST_LLM_PROVIDER", "google")
+    llm_model = env.get("SPINEDIGEST_LLM_MODEL", "gemini-2.0-flash")
+    llm_api_key = env.get("SPINEDIGEST_LLM_API_KEY", "") or env.get("GEMINI_API_KEY", "")
+    
+    env["SPINEDIGEST_LLM_PROVIDER"] = llm_provider
+    env["SPINEDIGEST_LLM_MODEL"] = llm_model
+    env["SPINEDIGEST_LLM_API_KEY"] = llm_api_key
+    
+    # Pass BASE_URL for openai_compatible providers
+    llm_base_url = env.get("SPINEDIGEST_LLM_BASE_URL", "")
+    if llm_base_url:
+        env["SPINEDIGEST_LLM_BASE_URL"] = llm_base_url
+    
+    log.info("[spinedigest] provider=%s model=%s base_url=%s", llm_provider, llm_model, llm_base_url or "default")
 
     cmd = [
         "spinedigest",

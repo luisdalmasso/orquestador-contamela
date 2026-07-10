@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="grid two">
+    <article class="card">
+        <h2>Servicios Core</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Puerto</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for svc in dashboard.services %}
+                <tr>
+                    <td><strong>{{ svc.name }}</strong><br><span class="muted">{{ svc.description }}</span></td>
+                    <td>{{ svc.port or '—' }}</td>
+                    <td>
+                        {% if svc.status == 'healthy' %}
+                        <span class="badge badge-ok">✅ healthy</span>
+                        {% elif svc.status == 'running' %}
+                        <span class="badge badge-warn">🔄 running</span>
+                        {% elif svc.status == 'degraded' %}
+                        <span class="badge badge-warn">⚠️ degraded</span>
+                        {% else %}
+                        <span class="badge badge-error">❌ {{ svc.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article class="card">
+        <h2>MCP Tools</h2>
+        <dl class="stats">
+            <div><dt>Total</dt><dd>{{ dashboard.mcp_tools.total }}</dd></div>
+        </dl>
+        <h3>Por categoría</h3>
+        <table class="table compact">
+            <thead>
+                <tr>
+                    <th>Categoría</th>
+                    <th>Tools</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat, count in dashboard.mcp_tools.categories.items() %}
+                <tr>
+                    <td>{{ cat }}</td>
+                    <td>{{ count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+</section>
+
+<section class="grid two">
+    <article class="card">
+        <h2>Circuitos (OpenHands)</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Circuito</th>
+                    <th>Workspace</th>
+                    <th>Git</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in dashboard.circuits %}
+                <tr>
+                    <td><strong>{{ c.id }}</strong></td>
+                    <td><code>{{ c.workspace }}</code></td>
+                    <td>{{ c.git_action }} → {{ c.git_target }}</td>
+                    <td>
+                        {% if c.status == 'active' %}
+                        <span class="badge badge-ok">✅ active</span>
+                        {% else %}
+                        <span class="badge badge-muted">💤 idle</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+
+    <article class="card">
+        <h2>Hermes Gateways</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Perfil</th>
+                    <th>Puerto</th>
+                    <th>Plataformas</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for gw in dashboard.hermes_gateways %}
+                <tr>
+                    <td><strong>{{ gw.name }}</strong></td>
+                    <td>{{ gw.port or '—' }}</td>
+                    <td>{{ gw.platforms | join(', ') }}</td>
+                    <td>
+                        {% if gw.status == 'healthy' %}
+                        <span class="badge badge-ok">✅ healthy</span>
+                        {% elif gw.status == 'running' %}
+                        <span class="badge badge-warn">🔄 running</span>
+                        {% elif gw.status == 'telegram-only' %}
+                        <span class="badge badge-muted">📱 telegram</span>
+                        {% else %}
+                        <span class="badge badge-error">❌ {{ gw.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </article>
+</section>
+
+<section class="grid two">
+    <article class="card">
+        <h2>Sesiones Activas</h2>
+        <dl class="stats">
+            <div><dt>Sesiones</dt><dd>{{ dashboard.sessions.active }}</dd></div>
+        </dl>
+        {% if dashboard.sessions.sessions %}
+        <table class="table compact">
+            <thead>
+                <tr>
+                    <th>Sesión</th>
+                    <th>Circuito</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in dashboard.sessions.sessions %}
+                <tr>
+                    <td><code>{{ s.session_id[:12] }}</code></td>
+                    <td>{{ s.circuit_id }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">No hay sesiones activas</p>
+        {% endif %}
+    </article>
+
+    <article class="card">
+        <h2>Accesos Rápidos</h2>
+        <nav class="stack">
+            <a href="/ui/circuits" class="btn">🔧 Circuitos</a>
+            <a href="/ui/hermes" class="btn">🤖 Hermes Profiles</a>
+            <a href="/ui/omp" class="btn">⚡ OMP Runtime</a>
+            <a href="/ui/tools" class="btn">🛠️ MCP Tools</a>
+            <a href="/ui/tenants" class="btn">👥 Tenants</a>
+            <a href="/ui/observability" class="btn">📊 Observabilidad</a>
+            <a href="/ui/services" class="btn">🔌 Servicios</a>
+            <a href="/ui/security" class="btn">🔒 Seguridad</a>
+        </nav>
+    </article>
+</section>
+{% endblock %}

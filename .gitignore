@@ -130,3 +130,14 @@ migration_manifest/
 conti_home/
 !conti_home/*.py
 !conti_home/sync_odoo_profiles.sh
+# ── ponytail: circuit-free ──
+# history/ es local only, no parte del repo
+circuit-free/history/
+# resumenes SÍ forma parte del repo
+# (no ignora circuit-free/resumenes/)
+# trazas es temporal entre resúmenes
+circuit-free/trazas/
+# ── Secrets ──
+.env
+.env.local
+.env.production

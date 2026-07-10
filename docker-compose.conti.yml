@@ -1,3 +1,8 @@
+# ============================================================
+# docker-compose.conti.yml — conti-backend
+# ============================================================
+# Secrets: usar .env (copiar de .env.example)
+# ============================================================
 services:
   conti-backend:
     build: 
@@ -9,8 +14,8 @@ services:
       - PYTHONUNBUFFERED=1
       - CONTI_BACKEND_CONFIG=/app/config/app_config.json
       - HERMES_HOME=/app/hermes_profiles/contihome
-      - KILOCODE_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6Im9hdXRoL2dvb2dsZToxMDg3NDY4Njc5OTUwMjQ3ODY5MzAiLCJhcGlUb2tlblBlcHBlciI6ImVmOThjYjFiLTc4MjEtNDcyOC05YzdlLTQxYjQ1ODdlZmQ4YyIsInZlcnNpb24iOjMsImlhdCI6MTc4MjI3NjM4NCwiZXhwIjoxOTM5OTU2Mzg0fQ.XjgRKLTN70oGW5lxBpwBMObfIgBBdMyIS4tkPXv0c38
-      - DEEPSEEK_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6Im9hdXRoL2dvb2dsZToxMDg3NDY4Njc5OTUwMjQ3ODY5MzAiLCJhcGlUb2tlblBlcHBlciI6bnVsbCwidmVyc2lvbiI6MywiaWF0IjoxNzczODQxNTU3LCJleHAiOjE5MzE1MjE1NTd9.Y4JwaJ7Jl-slgeIfCzPuPgv-BaHyvuNTHj25ojqp0IE
+      - KILOCODE_API_KEY=${KILOCODE_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       # Telegram
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - MERCADOPAGO_ACCESS_TOKEN=${MERCADOPAGO_ACCESS_TOKEN}
@@ -21,24 +26,25 @@ services:
       - MERCADOPAGO_PENDING_URL=${MERCADOPAGO_PENDING_URL}
       - MERCADOPAGO_NOTIFICATION_URL=${MERCADOPAGO_NOTIFICATION_URL}
       # MCP Odoo — credenciales para el servidor MCP en odoo18
-      - CONTI_MCP_API_KEY=sk-conti-mcp-write
+      - CONTI_MCP_API_KEY=${CONTI_MCP_API_KEY:-sk-conti-mcp-write}
       - ODOO_TENANT_ID=resto
       - MESA_ID=1
       # RAG Flamehaven
-      - FLAMEHAVEN_API_KEY=sk_live_80b128933b234efc9c49b3da44931851
+      - FLAMEHAVEN_API_KEY=${FLAMEHAVEN_API_KEY}
       # Gemini (metadata enrichment en ingesta RAG)
-      - GEMINI_API_KEY=AIzaSyBoKn0azg46YLwTUmTJGWGr8emXSUHD2_I
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       # SpineDigest (resumidor de documentos) - usa Gemini como backend
-      - SPINEDIGEST_LLM_PROVIDER=google
-      - SPINEDIGEST_LLM_MODEL=gemini-2.0-flash
-      - SPINEDIGEST_LLM_API_KEY=AIzaSyBoKn0azg46YLwTUmTJGWGr8emXSUHD2_I
+      - SPINEDIGEST_LLM_PROVIDER=${SPINEDIGEST_LLM_PROVIDER:-google}
+      - SPINEDIGEST_LLM_MODEL=${SPINEDIGEST_LLM_MODEL:-gemini-2.0-flash}
+      - SPINEDIGEST_LLM_API_KEY=${SPINEDIGEST_LLM_API_KEY:-${GEMINI_API_KEY}}
       - SPINEDIGEST_CACHE_DIR=/compose/documentos_listos/.spinedigest_cache
+      - SPINEDIGEST_LLM_BASE_URL=${SPINEDIGEST_LLM_BASE_URL:-}
       # OpenHands LLM via Xiaomi Token Plan Singapore (OpenAI-compatible)
-      - OPENHANDS_LLM_MODEL=openai/mimo-v2.5-pro
-      - OPENHANDS_LLM_BASE_URL=https://token-plan-sgp.xiaomimimo.com/v1
-      - OPENHANDS_LLM_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
-      - OPENHANDS_LLM_MAX_TOKENS=4000
-      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
+      - OPENHANDS_LLM_MODEL=${OPENHANDS_LLM_MODEL:-openai/mimo-v2.5-pro}
+      - OPENHANDS_LLM_BASE_URL=${OPENHANDS_LLM_BASE_URL:-https://token-plan-sgp.xiaomimimo.com/v1}
+      - OPENHANDS_LLM_API_KEY=${OPENHANDS_LLM_API_KEY:-${XIAOMI_TOKEN_PLAN_SGP_API_KEY}}
+      - OPENHANDS_LLM_MAX_TOKENS=${OPENHANDS_LLM_MAX_TOKENS:-4000}
+      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY}
       # ── Sprint 4: oh-my-pi agent runtime ──────────────────────────────
       # CONTI_USE_OMP_AGENT=true → usar OmpClient (oh-my-pi via conti-omp:7891).
       # CONTI_USE_OMP_AGENT=false (default) → usar OpenHands SDK legacy.
@@ -47,6 +53,8 @@ services:
       # OMP_HOST/OMP_PORT configuran OmpClient. Defaults: conti-omp:7891.
       - OMP_HOST=${OMP_HOST:-conti-omp}
       - OMP_PORT=${OMP_PORT:-7891}
+      # Docker client API version (required: daemon is 1.52, client ships 1.41)
+      - DOCKER_API_VERSION=1.44
       # ── Sprint 4.3: Ponytail trace + Docs-as-Code ─────────────────────
       # PONYTAIL_TRACE_DIR: donde se persisten los .md. Default .ponytail/traces/
       # relativo al cwd del conti-backend. Para producción debe ser absolute
@@ -89,13 +97,18 @@ services:
       - ./claw_data:/app/data
       # Hot-reload: app bindeada para desarrollo sin rebuild
       - ./app:/app/app
+      # Docs (onboarding.md, rules.md) — hot-reload sin rebuild
+      - ./docs:/app/docs
       # Hermes profiles (hot-reload de configuración sin rebuild)
       - ./app/hermes_profiles:/app/hermes_profiles
       # Configuración de los agentes (Arquitecto, DevOps, Developer)
-      - /desarrollo/config/team.toml:/app/config/team.toml
       - /desarrollo/shared_skills:/app/skills
       # Tus scripts de python con skills
-      - cbm_cache:/home/conti/.cache/codebase-memory-mcp
+      - /home/admin_odoo/cbm_cache:/home/conti/.cache/codebase-memory-mcp
+      - /var/lib/docker/volumes/conti-backend_omp_home/_data/.local/bin/codebase-memory-mcp:/usr/local/bin/codebase-memory-mcp:ro
+      - /usr/bin/socat:/usr/bin/socat:ro
+      # Persistencia de conversaciones y sesiones
+      - openhands_workspace:/app/workspace
     ports:
       - "9007:9001"
       - "9001:9001"
@@ -205,8 +218,14 @@ services:
       # NO necesita models.yml custom.
       - OMP_MODEL=xiaomi-token-plan-sgp/mimo-v2.5-pro
       - OMP_PROVIDER=xiaomi-token-plan-sgp
-      - OMP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
-      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY:-tp-sgiwk57kxh9bf20zopw6lprwgaco4wo6127vy6vbq5z69gvp}
+      - OMP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY}
+      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY}
+      # ── Model roles (Sprint 4.3+) ─────────────────────────────────
+      # OMP_SMOL_MODEL: modelo rápido para subtasks (tareas simples, linting, etc.)
+      # OMP_SLOW_MODEL: modelo lento/capaz para tareas complejas (architect, planning)
+      # Si están vacíos, omp usa solo OMP_MODEL para todo.
+      - OMP_SMOL_MODEL=${OMP_SMOL_MODEL:-xiaomi-token-plan-sgp/mimo-v2.5}
+      - OMP_SLOW_MODEL=${OMP_SLOW_MODEL:-}
       # ── Plan mode (Fase 1 PLAN_3 §15.ter) ───────────────────────────
       - OMP_PLAN=${OMP_PLAN:-0}
       # ── Tracing / observability ─────────────────────────────────────
@@ -223,6 +242,7 @@ services:
       # Cache de modelos y catalog: .omp/agent/, .omp/cache/.
       - omp_data:/data
       # Persistir índices de codebase-memory-mcp (619MB, ~3 min para re-indexar)
+      
       - /home/admin_odoo/cbm_cache:/home/conti/.cache/codebase-memory-mcp
       # Google Workspace (credentials + token)
       - ./google-workspace:/code/google-workspace
@@ -246,8 +266,6 @@ services:
       # TCP socket expuesto a conti-backend (interno) y opcionalmente
       # al host para debug manual.
       - "7891:7891"
-      # OpenHands Agent Server GUI (puerto 3000 interno → 3011 externo)
-      - "3011:3000"
     # Healthcheck: socat acepta conexiones TCP en :7891.
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 7891 || exit 1"]
@@ -259,10 +277,9 @@ services:
       - compose_odoo-network
 
 volumes:
-  sourcebot_data: null
-  omp_home: null
-  omp_data: null
-  cbm_cache: null
+  omp_home:
+  omp_data:
+  openhands_workspace:
 
 networks:
   desarrollo_odoo-network-dev: 
