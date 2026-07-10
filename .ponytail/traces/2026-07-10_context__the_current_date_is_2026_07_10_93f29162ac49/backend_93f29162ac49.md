@@ -1,29 +1,28 @@
 ---
-trace_id: trace-1783699781535
+trace_id: trace-1783700050592
 circuit: backend
 session_id: 93f29162ac49
 conversation_id: fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c
-turns: 3
+turns: 5
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-10T13:02:30.229421
-ended_at: 2026-07-10T13:09:41.436908
-duration_s: 490.1
-events_count: 58
+started_at: 2026-07-10T13:12:58.309645
+ended_at: 2026-07-10T13:14:07.490534
+duration_s: 559.3
+events_count: 36
 tokens:
-  input_nuevos: 90588
-  cache_read: 1052992
-  total_input: 1143580
-  cache_hit_pct: 92.1%
-  completion: 10275
+  input_nuevos: 233539
+  cache_read: 1897536
+  total_input: 2131075
+  cache_hit_pct: 89.0%
+  completion: 16513
   reasoning: 0
-  total: 1153855
-  ultimo_delta: 47099
-llm_calls: 2
+  total: 2147588
+  ultimo_delta: 149189
+llm_calls: 3
 tools_executed:
-  Find: 1
-  List: 1
-  Read: 25
+  List: 5
+  Read: 11
 ---
 
 ## Turn 1: (governance inyectada + user prompt)
@@ -775,3 +774,368 @@ services:
 | # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
 |---|-------|------------|-------------|---------|------------|-----------|-------|
 | 1 | 90,588 | 1,052,992 | 1,143,580 | 92.1% | 10,275 | 0 | 47,099 |
+
+
+---
+
+## Turn 5: <context>
+The current date is 2026-07-10.
+Terminals:
+Terminal: install
+
+</context>
+<editorContext>
+T...
+
+- **Circuito**: `backend`
+- **Conversación OpenHands/OMP**: [`fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c`](http://localhost:3012/conversations/fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c)
+- **Workspace**: `/contenedores/conti-backend`
+- **Inicio**: 2026-07-10T13:12:58.309645
+- **Fin**: 2026-07-10T13:14:07.490534
+- **Duración**: 1m 9s
+- **Eventos**: 36
+
+## Prompt Completo
+
+```text
+<context>
+The current date is 2026-07-10.
+Terminals:
+Terminal: install
+
+</context>
+<editorContext>
+The user's current file is /contenedores/conti-backend/docker-compose.conti.yml. 
+</editorContext>
+<reminderInstructions>
+When using the insert_edit_into_file tool, avoid repeating existing code, instead use a line comment with \`...existing code...\` to represent regions of unchanged code.
+When using the replace_string_in_file tool, include 3-5 lines of unchanged code before and after the string you want to replace, to make it unambiguous which part of the file should be edited.
+It is much faster to edit using the replace_string_in_file tool. Prefer the replace_string_in_file tool for making edits and only fall back to insert_edit_into_file if it fails.
+</reminderInstructions>
+<userRequest>
+no macho te seguis equivocando 9001: si es chatcompletions emulador de llm y ese es el uncio cicuito que comprendiste pero si no es chatcompletions lo manda a /contenedores/conti-backend/app/hermes_profiles y demas no podes analizar un contenedor sin leer el entrypoin /contenedores/conti-backend/entrypoint_hermes.sh
+</userRequest>
+```
+
+## Timeline (Gantt)
+
+```mermaid
+gantt
+    title Ejecución Turn 5 - backend
+    dateFormat  HH:mm:ss
+    axisFormat  %H:%M:%S
+
+    section Ejecución
+    Read (0.1s)  :done, 13:13:02, 0.1s
+    Read (0.1s)  :done, 13:13:09, 0.1s
+    Read (0.1s)  :done, 13:13:09, 0.1s
+    Read (0.1s)  :done, 13:13:15, 0.1s
+    Read (0.1s)  :done, 13:13:15, 0.1s
+    Read (0.1s)  :done, 13:13:21, 0.1s
+    Read (0.1s)  :done, 13:13:21, 0.1s
+    List (0.1s)  :done, 13:13:25, 0.1s
+    List (0.1s)  :done, 13:13:25, 0.1s
+    List (0.1s)  :done, 13:13:29, 0.1s
+    List (0.1s)  :done, 13:13:29, 0.1s
+    List (0.1s)  :done, 13:13:29, 0.1s
+    Read (0.1s)  :done, 13:13:32, 0.1s
+    Read (0.1s)  :done, 13:13:32, 0.1s
+    Read (0.1s)  :done, 13:13:37, 0.1s
+    Read (0.1s)  :done, 13:13:37, 0.1s
+```
+
+## Tools Ejecutadas (16)
+
+| # | Tool | Inicio | Duración | OK | Args/Result |
+|---|------|--------|----------|-----|-------------|
+| 1 | `Read` | 13:13:02 | 0.1s | ✅ | [entrypoint_hermes.sh#6E90] 1:#!/bin/bash 2:set -e 3: 4:# ============================================================ 5 |
+| 2 | `Read` | 13:13:09 | 0.1s | ✅ | [orchestrator.py#84E5] 24:class ChatOrchestrator: 25:    """Transparent proxy for tenant chat flow.""" … 75: 76:    asyn |
+| 3 | `Read` | 13:13:09 | 0.1s | ✅ | [router.py#C0D5] 73:@router.get("/v1") … 75:def get_v1_root() -> dict: 76:    return { … 79:        "backend": "openhand |
+| 4 | `Read` | 13:13:15 | 0.1s | ✅ | [router.py#C0D5] 113:@router.post("/v1/chat/completions") 114:async def post_chat_completions(request: Request): 115:    |
+| 5 | `Read` | 13:13:15 | 0.1s | ✅ | [service.py#1D73] 1078:    def _fetch_governance(self, trace: Any, circuit_id: str) -> str: 1079:        """Carga govern |
+| 6 | `Read` | 13:13:21 | 0.1s | ✅ | [router.py#BAAA] 70:@router.post( … 79:async def post_chat( 80:    request: ChatRequest, 81:    x_mesa_id: str \| None =  |
+| 7 | `Read` | 13:13:21 | 0.1s | ✅ | [registry_service.py#6AB4] 30:class RegistryService: 31:    def __init__(self) -> None: … 35:    def _register_defaults( |
+| 8 | `List` | 13:13:25 | 0.1s | ✅ | No files found matching pattern |
+| 9 | `List` | 13:13:25 | 0.1s | ✅ | .   - skills/                                                                      4d ago     - .hub/                    |
+| 10 | `List` | 13:13:29 | 0.1s | ✅ | .   - cron/                                   just now     - ticker_last_success         17B       just now     - ticker |
+| 11 | `List` | 13:13:29 | 0.1s | ✅ | .   - cron/                                      just now     - ticker_last_success            18B       just now     -  |
+| 12 | `List` | 13:13:29 | 0.1s | ✅ | .   - cron/                                                                      just now     - ticker_last_success      |
+| 13 | `Read` | 13:13:32 | 0.1s | ✅ | [config.yaml#C526] 1:model: 2:  default: stepfun/step-3.7-flash:free 3:  provider: kilocode 4:  base_url: https://api.ki |
+| 14 | `Read` | 13:13:32 | 0.1s | ✅ | [config.yaml#5095] 1:model: 2:  default: deepseek-v4-flash 3:  provider: deepseek 4:  base_url: '' 5:  api_mode: chat_co |
+| 15 | `Read` | 13:13:37 | 0.1s | ✅ | [orchestrator.py#84E5] 24:class ChatOrchestrator: 25:    """Transparent proxy for tenant chat flow.""" … 75: 76:    asyn |
+| 16 | `Read` | 13:13:37 | 0.1s | ✅ | [config.yaml#C526] 71:checkpoints: 72:  enabled: false … 79:  min_interval_hours: 24 80:file_read_max_chars: 100000 81:t |
+
+## Respuesta del Agente
+
+Tenés razón. Estaba analizando sin leer el punto de entrada real. Primero el entrypoint.Ahora sí. Tenía la foto incompleta. Déjame rehacer el análisis desde cero, leyendo los flujos reales.
+
+---
+
+## Arquitectura real — corregida
+
+### Los 2 caminos de routing en :9001
+
+```
+Request → FastAPI :9001
+    │
+    ├─ POST /v1/chat/completions → OpenHands Circuit System
+    │   │                          (4 circuitos: desarrollo, produccion, backend, libre)
+    │   ├─ detect_circuit() por keywords en prompt
+    │   ├─ governance injection (Layer 0)
+    │   ├─ OpenHands Agent Server :3000
+    │   │   └─ ACP → conti-omp :7891 → oh-my-pi runtime
+    │   └─ respuesta OpenAI-compatible
+    │
+    ├─ POST /v1/chat → Chat Router → Hermes Gateways
+    │   │              (7 perfiles hermes con config propia)
+    │   ├─ resolve tenant → resolve nanobot_port
+    │   └─ proxy a http://127.0.0.1:{port}/v1/chat/completions
+    │
+    ├─ /mcp/* → MCP Tools (84 tools, 12 categorías)
+    ├─ /ui/* → Web UI
+    └─ /health, /config, /onboarding, /rules → Admin
+```
+
+### Los 7 perfiles Hermes (cada uno con config.yaml propia)
+
+| Perfil | Puerto | Modelo | Rol |
+|--------|--------|--------|-----|
+| **contihome** (default) | :18791 | deepseek-v4-flash | Telegram general |
+| **catolico** | :8766 | stepfun/step-3.7-flash | Chatbot católico |
+| **resto** | :8767 | deepseek-v4-flash | Restaurante |
+| **odoo** | :8768 | — | ERP multi-tenant |
+| **odoo-resto** | Telegram | — | Tenant resto Telegram |
+| **odoo-nudo** | Telegram | — | Tenant nudo Telegram |
+| **odoo-mendoza** | :8769 | — | Staff OCRL Mendoza |
+| **mendoza** | :8770 | — | Clientes OCRL Mendoza |
+
+Cada perfil tiene su propio:
+- `config.yaml` (model, provider, agent, terminal, browser, TTS/STT, delegation, kanban)
+- `SOUL.md` (personalidad)
+- `AGENTS.md` (definición de agentes)
+- `TOOLS.md` (herramientas)
+- `gateway.yaml` (Telegram config)
+- `skills/` (skills bundled)
+- `sessions/` (historial)
+- `state.db` (estado persistente)
+
+### Los 4 circuitos OpenHands
+
+| Circuito | Workspace | Git | Tools nativos |
+|----------|-----------|-----|---------------|
+| `desarrollo` | /desarrollo | `run_salvar` → develop | terminal, file_editor, task_tracker |
+| `produccion` | /compose | `run_promover` develop→main | terminal, file_editor, task_tracker |
+| `backend` | /contenedores/conti-backend | `run_salvar` → main | terminal, file_editor, task_tracker |
+| `libre` | /tmp/free-agent | none | none (solo MCP) |
+
+---
+
+## Lo que la UI ACTUAL tiene vs lo que NECESITA
+
+### Páginas actuales (5)
+
+| Página | Estado | Qué hace | Qué falta |
+|--------|--------|----------|-----------|
+| `/ui` (Estado) | Parcial | Health + git + nanobot serve status | No muestra circuitos, no muestra hermes gateways, no muestra sesiones |
+| `/ui/settings` | Obsoleto | Volcado JSON crudo | Sin edición, sin filtros |
+| `/ui/tools` | Activo | Catálogo MCP + runner | Sin filtro por categoría, sin validación de schema |
+| `/ui/rules` | Obsoleto | Render de .md | Sin interacción, redundante con API |
+| `/ui/nanobots` | Parcial | Edit NanobotConfigService | NO edita hermes profiles, NO edita circuitos, NO edita OMP |
+
+### Páginas que FALTAN (las principales)
+
+#### 1. **Dashboard** (reemplaza `/ui` actual)
+- Health de TODOS los servicios: FastAPI, OpenHands, OMP, Hermes gateways (7)
+- Estado de los 4 circuitos (activo/inactivo, sesiones, último uso)
+- Estado de los 7 hermes gateways (PID, uptime, errores recientes)
+- Conteo de MCP tools por categoría
+- Últimas trazas Ponytail
+- Sesiones activas
+
+#### 2. **Circuitos** (NUEVA)
+- Editar `CircuitConfig`: workspace, git_action, git_action_target, allowed_tools_native, allowed_mcp_categories
+- Detección de circuito: palabras clave que activan cada circuito (`CIRCUIT_KEYWORDS`)
+- Toggle de circuitos (habilitar/deshabilitar)
+- Governance files: editor de `governance-layer0-{circuit}.md`
+- Logs de circuito activo
+
+#### 3. **Hermes Profiles** (NUEVA)
+- Listar los 7 perfiles descubiertos en `hermes_profiles/contihome/profiles/`
+- Por cada perfil:
+  - **Model**: model, provider, base_url, api_key, api_mode
+  - **Agent**: max_turns, gateway_timeout, tool_use_enforcement, task_completion_guidance
+  - **Terminal**: backend, timeout, docker_image, container_memory
+  - **Browser**: engine, inactivity_timeout, allow_private_urls
+  - **Delegation**: model, max_iterations, max_concurrent_children, orchestrator_enabled
+  - **Kanban**: dispatch_interval_seconds, auto_decompose, max_in_progress_per_profile
+  - **MCP servers**: contibackend URL, odoo_mcp URL + headers
+  - **Platform**: Telegram token, allow_from, group_policy, send_progress
+  - **TTS/STT**: provider, voice, model
+  - **Skills**: listar skills bundled, habilitar/deshabilitar
+  - **SOUL.md**: editor de personalidad
+  - **AGENTS.md**: editor de agentes
+
+#### 4. **OMP Runtime** (NUEVA)
+- Model, provider, API key (via env vars)
+- Skills: listar, crear, editar skills de OMP
+- MCP servers configurados en OMP (mcp.json)
+- Mode: execute vs plan
+- SMOL/SLOW model roles
+
+#### 5. **MCP Tools** (mejora de `/ui/tools`)
+- Filtro por categoría (12 categorías)
+- Filtro por visibilidad (PUBLIC/INTERNAL)
+- Búsqueda por nombre/descripción
+- Ejecución con validación de schema
+- Resultado con formateo
+
+#### 6. **Tenants** (NUEVA)
+- Listar tenants descubiertos de `/tenants/*/config.yaml`
+- Editar: strategy, nanobot_port, chat_ttl, max_history, rag_store
+- Keywords por tenant
+- Instructions por intent
+
+#### 7. **Servicios** (NUEVA)
+- Odoo: conexión, test, profiles
+- RAG (Flamehaven): stores, ingest jobs
+- Google Sheets: configuración de planillas
+- MercadoPago: tokens, sandbox, URLs
+- Codebase Memory MCP: estado del knowledge graph
+
+#### 8. **Seguridad** (NUEVA)
+- API keys (redactadas, con opción de revelar)
+- Allow_from lists por platform
+- Group policies
+- Approvals mode
+
+#### 9. **Observabilidad** (NUEVA)
+- Sesiones activas por circuito y por hermes profile
+- Traces recientes (Ponytail)
+- Logs por contenedor/profile
+- Healthchecks de todos los servicios
+
+---
+
+## Parámetros que DEBEN estar en el compose (versión final)
+
+```yaml
+services:
+  conti-backend:
+    environment:
+      # ── Core ──
+      - PYTHONUNBUFFERED=1
+      - CONTI_BACKEND_CONFIG=/app/config/app_config.json
+      - HERMES_HOME=/app/hermes_profiles/contihome
+      - TZ=America/Argentina/Mendoza
+
+      # ── OpenHands Agent Server (orquestador de circuitos) ──
+      - OPENHANDS_LLM_MODEL=${OPENHANDS_LLM_MODEL:-openai/mimo-v2.5-pro}
+      - OPENHANDS_LLM_BASE_URL=${OPENHANDS_LLM_BASE_URL:-https://token-plan-sgp.xiaomimimo.com/v1}
+      - OPENHANDS_LLM_API_KEY=${OPENHANDS_LLM_API_KEY:-${XIAOMI_TOKEN_PLAN_SGP_API_KEY}}
+      - OPENHANDS_LLM_MAX_TOKENS=${OPENHANDS_LLM_MAX_TOKENS:-4000}
+      - OPENHANDS_TIMEOUT=${OPENHANDS_TIMEOUT:-600}
+      - AGENT_SERVER_URL=http://127.0.0.1:3000
+
+      # ── OMP Runtime (oh-my-pi via conti-omp) ──
+      - CONTI_USE_OMP_AGENT=true
+      - OMP_HOST=${OMP_HOST:-conti-omp}
+      - OMP_PORT=${OMP_PORT:-7891}
+      - OMP_PROMPT_TIMEOUT=${OMP_PROMPT_TIMEOUT:-360}
+
+      # ── MCP Odoo ──
+      - CONTI_MCP_API_KEY=${CONTI_MCP_API_KEY}
+      - ODOO_TENANT_ID=${ODOO_TENANT_ID:-resto}
+      - MESA_ID=${MESA_ID:-1}
+
+      # ── Docker ──
+      - DOCKER_API_VERSION=1.44
+
+      # ── Secrets (via .env) ──
+      - KILOCODE_API_KEY=${KILOCODE_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - FLAMEHAVEN_API_KEY=${FLAMEHAVEN_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SPINEDIGEST_LLM_API_KEY=${SPINEDIGEST_LLM_API_KEY:-${GEMINI_API_KEY}}
+      - MERCADOPAGO_ACCESS_TOKEN=${MERCADOPAGO_ACCESS_TOKEN}
+      - MERCADOPAGO_PUBLIC_KEY=${MERCADOPAGO_PUBLIC_KEY}
+      - MERCADOPAGO_SANDBOX=${MERCADOPAGO_SANDBOX}
+      - MERCADOPAGO_SUCCESS_URL=${MERCADOPAGO_SUCCESS_URL}
+      - MERCADOPAGO_FAILURE_URL=${MERCADOPAGO_FAILURE_URL}
+      - MERCADOPAGO_PENDING_URL=${MERCADOPAGO_PENDING_URL}
+      - MERCADOPAGO_NOTIFICATION_URL=${MERCADOPAGO_NOTIFICATION_URL}
+      - XIAOMI_TOKEN_PLAN_SGP_API_KEY=${XIAOMI_TOKEN_PLAN_SGP_API_KEY}
+
+      # ── Tracing (Ponytail) ──
+      - PONYTAIL_TRACE_DIR=${PONYTAIL_TRACE_DIR:-.ponytail/traces/}
+      - PONYTAIL_COMMIT_TRACES=${PONYTAIL_COMMIT_TRACES:-true}
+      - PONYTAIL_PUSH_TRACES=${PONYTAIL_PUSH_TRACES:-true}
+      - PONYTAIL_TRACE_RETENTION_DAYS=${PONYTAIL_TRACE_RETENTION_DAYS:-90}
+
+    volumes:
+      # ── Git repos (RW para circuitos) ──
+      - /desarrollo:/desarrollo
+      - /compose:/compose
+      - /contenedores/conti-backend:/contenedores/conti-backend
+      # ── App hot-reload ──
+      - ./app:/app/app
+      - ./docs:/app/docs
+      - ./app/hermes_profiles:/app/hermes_profiles
+      - ./config/team.toml:/app/config/team.toml
+      - /desarrollo/shared_skills:/app/skills
+      # ── Docker socket ──
+      - /var/run/docker.sock:/var/run/docker.sock
+      # ── Data ──
+      - ./claw_data:/app/data
+      - openhands_workspace:/app/workspace
+      # ── codebase-memory-mcp cache ──
+      - /home/admin_odoo/cbm_cache:/home/conti/.cache/codebase-memory-mcp
+      - /var/lib/docker/volumes/conti-backend_omp_home/_data/.local/bin/codebase-memory-mcp:/usr/local/bin/codebase-memory-mcp:ro
+      # ── Google Workspace (si Hermes lo necesita) ──
+      - ./google-workspace:/code/google-workspace
+      # ── Voice (si Hermes TTS/STT lo necesita) ──
+      - ./voice:/code/voice
+
+    ports:
+      - "9001:9001"     # MCP + chat completions + UI + admin
+      - "9007:9001"     # MCP backup
+      - "3011:3000"     # OpenHands Agent Server
+      - "3012:3012"     # OpenHands Agent Canvas
+      - "3013:3001"     # OpenHands CLI
+      - "8642:8642"     # Hermes API default (contihome)
+      - "8766:8766"     # Hermes católico
+      - "8767:8767"     # Hermes resto
+      - "8768:8768"     # Hermes odoo
+      - "8769:8769"     # Hermes odoo-mendoza
+      - "8770:8770"     # Hermes mendoza
+      - "18791:18791"   # Hermes gateway contihome
+      - "9119:9119"     # Hermes dashboard
+
+    mem_limit: 24g  # necesario por OpenHands + 7 Hermes gateways + OMP client
+    cpus: 4
+```
+
+---
+
+## Resumen de cambios
+
+| Área | Antes | Después | Razón |
+|------|-------|---------|-------|
+| **Secrets** | 7 hardcodeados | Todos en `${VAR}` via `.env` | Seguridad |
+| **UI** | 5 páginas (3 obsoletas) | 9 páginas (dashboard, circuitos, hermes, omp, tools, tenants, servicios, seguridad, observabilidad) | Cobertura completa |
+| **Compose** | 12 puertos | 13 puertos (agregado :8642) | Hermes API default |
+| **Hermes** | No visible en UI | 7 perfiles con config completa | Gestión operativa |
+| **Circuitos** | No editable | Editable desde UI | Flexibilidad |
+
+---
+
+¿Querés que ejecute este plan? Puedo empezar por:
+1. **Compose cleanup** — secretar hardcoded keys a `.env`
+2. **UI refactor** — agregar las 4 secciones nuevas (dashboard, circuitos, hermes, omp)
+3. **Ambos en paralelo**
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 233,539 | 1,897,536 | 2,131,075 | 89.0% | 16,513 | 0 | 149,189 |
