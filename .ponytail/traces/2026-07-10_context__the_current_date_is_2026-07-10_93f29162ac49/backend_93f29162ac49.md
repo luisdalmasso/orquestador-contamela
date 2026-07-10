@@ -1,30 +1,27 @@
 ---
-trace_id: trace-1783721836925
+trace_id: trace-1783722135598
 circuit: backend
 session_id: 93f29162ac49
 conversation_id: fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c
-turns: 33
+turns: 37
 workspace: /contenedores/conti-backend
 model: openai/mimo-v2.5-pro
-started_at: 2026-07-10T19:14:00.577724
-ended_at: 2026-07-10T19:17:13.908520
-duration_s: 15926.7
-events_count: 14
+started_at: 2026-07-10T19:20:15.980816
+ended_at: 2026-07-10T19:22:12.678166
+duration_s: 16220.1
+events_count: 10
 tokens:
-  input_nuevos: 1600367
-  cache_read: 26789056
-  total_input: 28389423
-  cache_hit_pct: 94.4%
-  completion: 77700
+  input_nuevos: 1620804
+  cache_read: 29219200
+  total_input: 30840004
+  cache_hit_pct: 94.7%
+  completion: 81218
   reasoning: 0
-  total: 28467123
-  ultimo_delta: 12697
-llm_calls: 25
+  total: 30921222
+  ultimo_delta: 4216
+llm_calls: 27
 tools_executed:
-  Create: 1
-  Read: 1
-  Update: 2
-  Verify: 1
+  terminal: 3
 ---
 
 ## Turn 1: (governance inyectada + user prompt)
@@ -5056,3 +5053,372 @@ El system prompt inyectará el governance file que ahora incluye:
 | # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
 |---|-------|------------|-------------|---------|------------|-----------|-------|
 | 1 | 1,600,367 | 26,789,056 | 28,389,423 | 94.4% | 77,700 | 0 | 12,697 |
+
+
+---
+
+## Turn 35: <context>
+The current date is 2026-07-10.
+Terminals:
+Terminal: bash
+Last Command: source /contenedor...
+
+- **Circuito**: `produccion`
+- **Conversación OpenHands/OMP**: [`fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c`](http://localhost:3012/conversations/fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c)
+- **Workspace**: `/compose`
+- **Inicio**: 2026-07-10T19:17:16.888836
+- **Fin**: 2026-07-10T19:20:13.596934
+- **Duración**: 2m 57s
+- **Eventos**: 16
+
+## Prompt Completo
+
+```text
+<context>
+The current date is 2026-07-10.
+Terminals:
+Terminal: bash
+Last Command: source /contenedores/conti-backend/.venv/bin/activate
+Cwd: /contenedores/conti-backend
+Exit Code: 1
+Terminal: install
+
+</context>
+<editorContext>
+The user's current file is /contenedores/conti-backend/.ponytail/traces/2026-07-10_context__the_current_date_is_2026_07_10_93f29162ac49/backend_93f29162ac49.md. 
+</editorContext>
+<reminderInstructions>
+When using the insert_edit_into_file tool, avoid repeating existing code, instead use a line comment with \`...existing code...\` to represent regions of unchanged code.
+When using the replace_string_in_file tool, include 3-5 lines of unchanged code before and after the string you want to replace, to make it unambiguous which part of the file should be edited.
+It is much faster to edit using the replace_string_in_file tool. Prefer the replace_string_in_file tool for making edits and only fall back to insert_edit_into_file if it fails.
+</reminderInstructions>
+<userRequest>
+bien y cuando en un nuevo chat/sesion el system prompt te indique que stas en cualquiera de los otros 3 circuitos ( desarrollo, produccion o free)
+</userRequest>
+```
+
+## Timeline (Gantt)
+
+```mermaid
+gantt
+    title Ejecución Turn 35 - produccion
+    dateFormat  HH:mm:ss
+    axisFormat  %H:%M:%S
+
+    section Ejecución
+    Read (0.1s)  :done, 19:19:48, 0.1s
+    Read (0.1s)  :done, 19:19:48, 0.1s
+    terminal (0.1s)  :done, 19:19:52, 0.1s
+    Update (0.1s)  :done, 19:19:58, 0.1s
+    Update (0.1s)  :done, 19:20:03, 0.1s
+    read: (0.1s)  :done, 19:20:07, 0.1s
+```
+
+## Tools Ejecutadas (6)
+
+| # | Tool | Inicio | Duración | OK | Args/Result |
+|---|------|--------|----------|-----|-------------|
+| 1 | `Read` | 19:19:48 | 0.1s | ✅ | [governance-layer0-produccion.md#9ECE] 1:# Layer 0 — Governance Produccion (~150 líneas) 2:# Inyectado SIEMPRE en el pri |
+| 2 | `Read` | 19:19:48 | 0.1s | ✅ | [governance-layer0-desarrollo.md#B33E] 1:# Layer 0 — Governance Desarrollo (~150 líneas) 2:# Inyectado SIEMPRE en el pri |
+| 3 | `terminal` | 19:19:52 | 0.1s | ✅ | ls -la /contenedores/conti-backend/docs/governance*.md |
+| 4 | `Update` | 19:19:58 | 0.1s | ✅ | [/contenedores/conti-backend/docs/governance-layer0-desarrollo.md#C63F] 54:# MCP Backend  56:- **Server**: `http://conti |
+| 5 | `Update` | 19:20:03 | 0.1s | ✅ | [/contenedores/conti-backend/docs/governance-layer0-produccion.md#3F8E] 54:# MCP Backend  56:- **Server**: `http://conti |
+| 6 | `read:` | 19:20:07 | 0.1s | ✅ | [governance-layer0-desarrollo.md#C63F] 45:# Git flow (desarrollo) … 47:- `run_salvar(summary="...")` → commit + push a ` |
+
+## Respuesta del Agente
+
+Actualizo los governance files de desarrollo y produccion:## Governance files actualizados ✅
+
+### Mapeo de circuitos a projects
+
+| Circuito | Project parameter | Workspace |
+|----------|-------------------|-----------|
+| `backend` | `"contenedores-conti-backend"` | `/contenedores/conti-backend` |
+| `desarrollo` | `"desarrollo"` | `/desarrollo` |
+| `produccion` | `"compose"` | `/compose` |
+| `libre` | (usa desarrollo) | `/tmp/free-agent` |
+
+### Archivos actualizados
+
+```
+docs/
+├── governance-layer0-backend.md     ✅ Actualizado
+├── governance-layer0-desarrollo.md  ✅ Actualizado
+└── governance-layer0-produccion.md  ✅ Actualizado
+```
+
+### Lo que contiene cada governance
+
+```markdown
+# MCP Backend
+
+- **Server**: http://conti-backend:9001
+- **Endpoint**: POST /mcp/call {"tool": "<name>", "arguments": {...}}
+- **85 tools** en 12 categorías
+- **⚠️ IMPORTANTE**: SIEMPRE usar `project: "<PROJECT>"` en codebase_memory tools
+- **codebase-memory**: 11 tools para knowledge graph
+  - search_graph(name_pattern=".*", project="<PROJECT>")
+  - get_architecture(project="<PROJECT>")
+  - trace_path(function_name="...", project="<PROJECT>")
+  - get_code_snippet(qualified_name="...", project="<PROJECT>")
+  - query_graph(query="MATCH ...", project="<PROJECT>")
+
+# Skills (OMP)
+
+- codebase-memory
+- odoo-tools
+- git-workflow
+- observability-tools
+- mcp-backend-tools: Eliminado — acceder via HTTP
+```
+
+---
+
+### En nueva sesión
+
+Cuando el system prompt inyecte el governance del circuito correspondiente, el agente sabrá automáticamente:
+
+1. **Project parameter correcto** para codebase_memory
+2. **Cómo acceder** a las 85 MCP tools via HTTP
+3. **Las skills disponibles** en OMP
+4. **Git flow** específico del circuito
+
+**No más amnesia** — cada circuito tiene su governance con la configuración correcta.
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 1,618,351 | 28,232,768 | 29,851,119 | 94.6% | 79,455 | 0 | 19,739 |
+
+## Reasoning del Agente
+
+### 19:19:52 → `terminal`
+
+> List all governance files
+
+
+---
+
+## Turn 37: <context>
+The current date is 2026-07-10.
+Terminals:
+Terminal: bash
+Last Command: source /contenedor...
+
+- **Circuito**: `backend`
+- **Conversación OpenHands/OMP**: [`fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c`](http://localhost:3012/conversations/fc55aa1c-f9ec-4242-a6a9-bfcf35c7b61c)
+- **Workspace**: `/contenedores/conti-backend`
+- **Inicio**: 2026-07-10T19:20:15.980816
+- **Fin**: 2026-07-10T19:22:12.678166
+- **Duración**: 1m 57s
+- **Eventos**: 10
+
+## Prompt Completo
+
+```text
+<context>
+The current date is 2026-07-10.
+Terminals:
+Terminal: bash
+Last Command: source /contenedores/conti-backend/.venv/bin/activate
+Cwd: /contenedores/conti-backend
+Exit Code: 1
+Terminal: install
+
+</context>
+<editorContext>
+The user's current file is /contenedores/conti-backend/.ponytail/traces/2026-07-10_context__the_current_date_is_2026_07_10_93f29162ac49/backend_93f29162ac49.md. 
+</editorContext>
+<reminderInstructions>
+When using the insert_edit_into_file tool, avoid repeating existing code, instead use a line comment with \`...existing code...\` to represent regions of unchanged code.
+When using the replace_string_in_file tool, include 3-5 lines of unchanged code before and after the string you want to replace, to make it unambiguous which part of the file should be edited.
+It is much faster to edit using the replace_string_in_file tool. Prefer the replace_string_in_file tool for making edits and only fall back to insert_edit_into_file if it fails.
+</reminderInstructions>
+<userRequest>
+dime los gitflow especificos
+</userRequest>
+```
+
+## Timeline (Gantt)
+
+```mermaid
+gantt
+    title Ejecución Turn 37 - backend
+    dateFormat  HH:mm:ss
+    axisFormat  %H:%M:%S
+
+    section Ejecución
+    terminal (0.1s)  :done, 19:21:51, 0.1s
+    terminal (0.1s)  :done, 19:21:56, 0.1s
+    terminal (0.1s)  :done, 19:22:01, 0.1s
+```
+
+## Tools Ejecutadas (3)
+
+| # | Tool | Inicio | Duración | OK | Args/Result |
+|---|------|--------|----------|-----|-------------|
+| 1 | `terminal` | 19:21:51 | 0.1s | ✅ | echo "=== CIRCUITO: BACKEND ===" && grep -A 10 "Git flow" /contenedores/conti-backend/docs/governance-layer0-backend.md  |
+| 2 | `terminal` | 19:21:56 | 0.1s | ✅ | curl -s -X POST http://conti-backend:9001/mcp/call -H "Content-Type: application/json" -d '{"tool": "get_code_snippet",  |
+| 3 | `terminal` | 19:22:01 | 0.1s | ✅ | curl -s -X POST http://conti-backend:9001/mcp/call -H "Content-Type: application/json" -d '{"tool": "get_code_snippet",  |
+
+## Respuesta del Agente
+
+## Git Flow por Circuito
+
+### Resumen ejecutivo
+
+| Circuito | Workspace | Git Action | Target | Promover | Hotfix |
+|----------|-----------|------------|--------|----------|--------|
+| **backend** | `/contenedores/conti-backend` | `run_salvar` | `main` | ❌ | ❌ |
+| **desarrollo** | `/desarrollo` | `run_salvar` | `develop` | ❌ | ❌ |
+| **produccion** | `/compose` | `run_promover` | `develop→main` | ✅ | ✅ |
+| **libre** | `/tmp/free-agent` | `none` | — | ❌ | ❌ |
+
+---
+
+### Detalle por circuito
+
+#### 1. **backend** (orquestador-contamela)
+
+```
+Workspace:  /contenedores/conti-backend
+Branch:     main
+Repo:       orquestador-contamela
+
+Acciones:
+  ✅ run_salvar(summary="...")  → commit + push directo a main
+  ❌ run_promover               → NO aplica (no hay develop)
+  ❌ run_hotfix_sync            → NO aplica
+
+Reglas:
+  - NUNCA git commit/push directo
+  - ANTES de commit: validate_python_syntax + run_pytest
+  - Si falla → NO commitear, arreglar primero
+```
+
+#### 2. **desarrollo** (contamela-stack dev)
+
+```
+Workspace:  /desarrollo
+Branch:     develop
+Repo:       contamela-stack (dev)
+
+Acciones:
+  ✅ run_salvar(summary="...")  → commit + push a develop
+  ❌ run_promover               → NO aplica (usar circuito produccion)
+  ❌ run_hotfix_sync            → NO aplica
+
+Reglas:
+  - NUNCA git commit/push directo
+  - ANTES de run_salvar: validate_python_syntax
+  - DESPUÉS de editar: run_pytest
+```
+
+#### 3. **produccion** (contamela-stack prod)
+
+```
+Workspace:  /compose (main) + /desarrollo (develop)
+Branch:     main (compose), develop (desarrollo)
+Repo:       contamela-stack (prod + dev)
+
+Acciones:
+  ✅ run_promover(summary="...")     → merge develop→main + push
+  ✅ run_hotfix_sync(summary="...")  → commit en /compose, merge a /desarrollo
+  ❌ 3-despliegue.sh                 → SOLO Luis, NUNCA ejecutar
+
+Reglas:
+  - NUNCA git commit/push directo
+  - /compose es RW SOLO para git y hotfixes urgentes
+  - Si Luis modificó /compose directamente → avisar del riesgo de git reset --hard
+```
+
+#### 4. **libre** (conversacional)
+
+```
+Workspace:  /tmp/free-agent
+Branch:     —
+Repo:       — (sin repo)
+
+Acciones:
+  ❌ run_salvar      → NO aplica
+  ❌ run_promover    → NO aplica
+  ❌ run_hotfix_sync → NO aplica
+
+Reglas:
+  - SIN acceso a repos git
+  - Solo MCP tools (RAG, Odoo, Sheets, docs)
+  - Puede recibir ruta del host como argumento
+  - Si la ruta NO está bind-mounted → pedir credenciales a Luis
+```
+
+---
+
+### Flujo visual
+
+```
+                    ┌─────────────────┐
+                    │     LIBRE       │
+                    │ (conversación)  │
+                    └─────────────────┘
+
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   DESARROLLO    │────▶│   PRODUCCION    │────▶│   DEPLOY        │
+│   /desarrollo   │     │   /compose      │     │ (solo Luis)     │
+│   develop       │     │   main          │     │                 │
+│   run_salvar    │     │   run_promover  │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                               │
+                               │ run_hotfix_sync
+                               ▼
+                        ┌─────────────────┐
+                        │   DESARROLLO    │
+                        │   (merge back)  │
+                        └─────────────────┘
+
+┌─────────────────┐
+│    BACKEND      │
+│ /contenedores/  │
+│  conti-backend  │
+│   main          │
+│   run_salvar    │
+└─────────────────┘
+```
+
+---
+
+### Commands MCP对应
+
+```bash
+# Backend (directo a main)
+curl -d '{"tool": "run_salvar", "arguments": {"summary": "fix: ...", "confirm": false}}'
+
+# Desarrollo (a develop)
+curl -d '{"tool": "run_salvar", "arguments": {"summary": "feat: ...", "confirm": false}}'
+
+# Produccion (promover develop→main)
+curl -d '{"tool": "run_promover", "arguments": {"summary": "release: ...", "confirm": false}}'
+
+# Produccion (hotfix main→develop)
+curl -d '{"tool": "run_hotfix_sync", "arguments": {"summary": "hotfix: ...", "confirm": false}}'
+```
+
+## Tokens por Llamada LLM
+
+| # | Input | Cache Read | Total Input | Cache % | Completion | Reasoning | Delta |
+|---|-------|------------|-------------|---------|------------|-----------|-------|
+| 1 | 1,620,804 | 29,219,200 | 30,840,004 | 94.7% | 81,218 | 0 | 4,216 |
+
+## Reasoning del Agente
+
+### 19:21:51 → `terminal`
+
+> Extract git flow from all governance files
+
+### 19:21:56 → `terminal`
+
+> Get CIRCUITS definition from code
+
+### 19:22:01 → `terminal`
+
+> Get rest of CIRCUITS definition
